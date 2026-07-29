@@ -2212,6 +2212,9 @@
       if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
+      } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
       } else {
         clientX = e.clientX;
         clientY = e.clientY;
@@ -2249,12 +2252,13 @@
         if (currentMode === 'reset') return;
         isDraggingTimer = true;
         handleProgressInteraction(e);
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
       };
 
       const onMove = (e) => {
         if (!isDraggingTimer) return;
         handleProgressInteraction(e);
+        if (e.cancelable) e.preventDefault();
       };
 
       const onEnd = () => {
@@ -2268,6 +2272,7 @@
       container.addEventListener("touchstart", onStart, { passive: false });
       window.addEventListener("touchmove", onMove, { passive: false });
       window.addEventListener("touchend", onEnd);
+      window.addEventListener("touchcancel", onEnd);
     }
 
     // ----------------------------------------------------

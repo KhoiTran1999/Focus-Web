@@ -1290,6 +1290,62 @@
         gif: "listWorkoutGif/Bodyweight Squats.webp",
         sets: 3,
         reps: 12
+      },
+      {
+        id: "push_ups",
+        titleEn: "Push-ups",
+        titleVi: "Hít đất Push-ups",
+        gif: "listWorkoutGif/Push-ups.webp",
+        sets: 3,
+        reps: 10
+      },
+      {
+        id: "mountain_climbers",
+        titleEn: "Mountain Climbers",
+        titleVi: "Leo núi Mountain Climbers",
+        gif: "listWorkoutGif/Mountain Climbers.webp",
+        sets: 3,
+        reps: 15
+      },
+      {
+        id: "high_knees",
+        titleEn: "High Knees",
+        titleVi: "Chạy nâng cao đùi High Knees",
+        gif: "listWorkoutGif/High Knees.webp",
+        sets: 3,
+        reps: 20
+      },
+      {
+        id: "triceps_dips",
+        titleEn: "Triceps Dips",
+        titleVi: "Chống đẩy sau Triceps Dips",
+        gif: "listWorkoutGif/Triceps Dips.webp",
+        sets: 3,
+        reps: 12
+      },
+      {
+        id: "bicycle_crunches",
+        titleEn: "Bicycle Crunches",
+        titleVi: "Gập bụng đạp xe Bicycle Crunches",
+        gif: "listWorkoutGif/Bicycle Crunches.webp",
+        sets: 3,
+        reps: 15
+      },
+      {
+        id: "burpees",
+        titleEn: "Burpees",
+        titleVi: "Hít đất bật nhảy Burpees",
+        gif: "listWorkoutGif/Burpees.webp",
+        sets: 3,
+        reps: 8
+      },
+      {
+        id: "jumping_lunges",
+        titleEn: "Jumping Lunges",
+        titleVi: "Nhảy chùng chân Jumping Lunges",
+        gif: "listWorkoutGif/Jumping Lunges.webp",
+        sets: 3,
+        reps: 12
       }
     ];
 
@@ -1443,6 +1499,19 @@
         if (storedJacksReps) hiitWorkouts[0].reps = parseInt(storedJacksReps, 10);
         if (storedSquatsSets) hiitWorkouts[1].sets = parseInt(storedSquatsSets, 10);
         if (storedSquatsReps) hiitWorkouts[1].reps = parseInt(storedSquatsReps, 10);
+      } else {
+        // Auto-scan / Sync default workouts on startup to import any missing exercises
+        let workoutsUpdated = false;
+        defaultHiitWorkouts.forEach(defWorkout => {
+          const exists = hiitWorkouts.some(w => w.gif === defWorkout.gif);
+          if (!exists) {
+            hiitWorkouts.push(JSON.parse(JSON.stringify(defWorkout)));
+            workoutsUpdated = true;
+          }
+        });
+        if (workoutsUpdated) {
+          localStorage.setItem("hiitWorkouts", JSON.stringify(hiitWorkouts));
+        }
       }
 
       // Sync legacy globals

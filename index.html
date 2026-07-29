@@ -1597,6 +1597,166 @@
         gif: "listWorkoutGif/Jumping Lunges.webp",
         sets: 3,
         reps: 12
+      },
+      {
+        id: "bulgarian_split_squat",
+        titleEn: "Bulgarian Split Squats",
+        titleVi: "Squat một chân Bulgarian",
+        gif: "listWorkoutGif/Bulgarian split squat.webp",
+        sets: 3,
+        reps: 10
+      },
+      {
+        id: "lateral_lunge",
+        titleEn: "Lateral Lunges",
+        titleVi: "Lunge ngang Lateral Lunge",
+        gif: "listWorkoutGif/Lateral lunge.webp",
+        sets: 3,
+        reps: 10
+      },
+      {
+        id: "standard_pull_ups",
+        titleEn: "Standard Pull-ups",
+        titleVi: "Hít xà đơn Standard Pull-ups",
+        gif: "listWorkoutGif/Standard Pull-Ups.webp",
+        sets: 3,
+        reps: 8
+      },
+      {
+        id: "wide_grip_pull_ups",
+        titleEn: "Wide-Grip Pull-ups",
+        titleVi: "Hít xà đơn tay rộng Wide-Grip",
+        gif: "listWorkoutGif/Wide-Grip Pull-Ups.webp",
+        sets: 3,
+        reps: 8
+      },
+      {
+        id: "negative_pull_ups",
+        titleEn: "Negative Pull-ups",
+        titleVi: "Hít xà âm lực Negative Pull-ups",
+        gif: "listWorkoutGif/Negative Pull-Ups.webp",
+        sets: 3,
+        reps: 8
+      },
+      {
+        id: "dead_hang",
+        titleEn: "Dead Hang",
+        titleVi: "Treo xà thụ động Dead Hang",
+        gif: "listWorkoutGif/Dead Hang.webp",
+        sets: 3,
+        reps: 30
+      },
+      {
+        id: "hanging_knee_raises",
+        titleEn: "Hanging Knee Raises",
+        titleVi: "Treo xà co gối Hanging Knee Raises",
+        gif: "listWorkoutGif/Hanging Knee Raises.webp",
+        sets: 3,
+        reps: 12
+      },
+      {
+        id: "hanging_leg_raises",
+        titleEn: "Hanging Leg Raises",
+        titleVi: "Treo xà nâng chân Hanging Leg Raises",
+        gif: "listWorkoutGif/Hanging Leg Raises.webp",
+        sets: 3,
+        reps: 8
+      },
+      {
+        id: "plank",
+        titleEn: "Plank",
+        titleVi: "Tấm ván Plank",
+        gif: "listWorkoutGif/Plank.webp",
+        sets: 3,
+        reps: 30
+      },
+      {
+        id: "side_plank",
+        titleEn: "Side Plank",
+        titleVi: "Plank nghiêng Side Plank",
+        gif: "listWorkoutGif/Side Plank.webp",
+        sets: 3,
+        reps: 20
+      },
+      {
+        id: "hollow_hold",
+        titleEn: "Hollow Hold",
+        titleVi: "Giữ bụng Hollow Hold",
+        gif: "listWorkoutGif/Hollow Hold.webp",
+        sets: 3,
+        reps: 20
+      },
+      {
+        id: "crunches",
+        titleEn: "Crunches",
+        titleVi: "Gập bụng Crunches",
+        gif: "listWorkoutGif/Crunches.webp",
+        sets: 3,
+        reps: 15
+      },
+      {
+        id: "russian_twists",
+        titleEn: "Russian Twists",
+        titleVi: "Vặn mình kiểu Nga Russian Twists",
+        gif: "listWorkoutGif/Russian Twists.webp",
+        sets: 3,
+        reps: 20
+      },
+      {
+        id: "reverse_crunch",
+        titleEn: "Reverse Crunch",
+        titleVi: "Gập bụng ngược Reverse Crunch",
+        gif: "listWorkoutGif/Reverse Crunch.webp",
+        sets: 3,
+        reps: 15
+      },
+      {
+        id: "standard_push_ups",
+        titleEn: "Standard Push-ups",
+        titleVi: "Hít đất cơ bản Standard Push-ups",
+        gif: "listWorkoutGif/Standard Push-ups.webp",
+        sets: 3,
+        reps: 12
+      },
+      {
+        id: "wide_push_ups",
+        titleEn: "Wide Push-ups",
+        titleVi: "Hít đất tay rộng Wide Push-ups",
+        gif: "listWorkoutGif/Wide Push-ups.webp",
+        sets: 3,
+        reps: 12
+      },
+      {
+        id: "close_grip_push_ups",
+        titleEn: "Close-Grip Push-ups",
+        titleVi: "Hít đất tay hẹp Close-Grip",
+        gif: "listWorkoutGif/Close-grip Push-ups.webp",
+        sets: 3,
+        reps: 10
+      },
+      {
+        id: "decline_push_ups",
+        titleEn: "Decline Push-ups",
+        titleVi: "Hít đất dốc xuống Decline Push-ups",
+        gif: "listWorkoutGif/Decline Push-ups.webp",
+        sets: 3,
+        reps: 10
+      },
+      {
+        id: "pike_push_ups",
+        titleEn: "Pike Push-ups",
+        titleVi: "Hít đất hình chữ V Pike Push-ups",
+        gif: "listWorkoutGif/Pike Push-ups.webp",
+        sets: 3,
+        reps: 8
+      },
+      {
+        id: "archer_push_ups",
+        titleEn: "Archer Push-ups",
+        titleVi: "Hít đất bắn cung Archer Push-ups",
+        gif: "listWorkoutGif/Archer Push-ups.webp",
+        sets: 3,
+        reps: 6
       }
     ];
 
@@ -3104,10 +3264,13 @@
           const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
           const cleanName = fileNameWithoutExt.replace(/[_-]/g, ' ').trim();
 
-          const exists = hiitWorkouts.some(w => w.gif === gifPath);
+          // Generate a cleaner, unique ID based on the file name (slug style)
+          const cleanId = fileNameWithoutExt.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
+
+          const exists = hiitWorkouts.some(w => w.gif === gifPath || w.id === cleanId);
           if (!exists) {
             hiitWorkouts.push({
-              id: "scanned_" + Date.now() + "_" + i,
+              id: cleanId,
               titleEn: cleanName,
               titleVi: cleanName,
               gif: gifPath,

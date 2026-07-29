@@ -872,6 +872,53 @@
       background-color: rgba(27, 19, 14, 0.85);
     }
 
+    /* AMOLED Minimalist Zoom Mode styles */
+    body.amoled-mode {
+      background: #000000 !important;
+      background-color: #000000 !important;
+    }
+    body.amoled-mode .station-container {
+      background: #000000 !important;
+      background-color: #000000 !important;
+      border: none !important;
+      box-shadow: none !important;
+      max-height: 100vh !important;
+      height: 100vh !important;
+      max-width: 100% !important;
+      width: 100vw !important;
+      border-radius: 0 !important;
+    }
+    body.amoled-mode header,
+    body.amoled-mode nav,
+    body.amoled-mode .quick-check-panel,
+    body.amoled-mode #btnResetTimer,
+    body.amoled-mode #btnQuickResetTrigger {
+      display: none !important;
+    }
+    body.amoled-mode .view-content {
+      padding: 10px !important;
+      justify-content: center !important;
+    }
+    body.amoled-mode .progress-container {
+      width: 320px !important;
+      height: 320px !important;
+      margin-bottom: 30px !important;
+    }
+    body.amoled-mode .time-digits {
+      font-size: 4.2rem !important;
+    }
+    body.amoled-mode .growth-wrapper {
+      transform: translateY(-48px) !important;
+      animation: floatGrowthAmoled 6s ease-in-out infinite !important;
+    }
+    body.amoled-mode .timer-display {
+      transform: translateY(32px) !important;
+    }
+    @keyframes floatGrowthAmoled {
+      0%, 100% { transform: translateY(-48px); }
+      50% { transform: translateY(-56px); }
+    }
+
     /* Dialog Styles */
     dialog {
       background-color: var(--bg-surface);
@@ -1022,6 +1069,9 @@
             <button class="btn btn-primary" id="btnStartPause">
               <svg viewBox="0 0 24 24" id="playPauseIcon"><path d="M8 5v14l11-7z"/></svg>
               <span id="playPauseText" data-t="startFocus">Start Focus</span>
+            </button>
+            <button class="btn btn-icon btn-secondary" id="btnAmoledToggle" title="Amoled Mode">
+              <svg viewBox="0 0 24 24" id="amoledToggleIcon"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
             </button>
             <button class="btn btn-icon btn-secondary" id="btnSkipTimer" title="Skip to break">
               <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
@@ -1555,6 +1605,8 @@
     const btnStartPause = document.getElementById("btnStartPause");
     const playPauseIcon = document.getElementById("playPauseIcon");
     const playPauseText = document.getElementById("playPauseText");
+    const btnAmoledToggle = document.getElementById("btnAmoledToggle");
+    const amoledToggleIcon = document.getElementById("amoledToggleIcon");
     const btnSkipTimer = document.getElementById("btnSkipTimer");
     const btnResetTimer = document.getElementById("btnResetTimer");
     const btnQuickResetTrigger = document.getElementById("btnQuickResetTrigger");
@@ -1941,6 +1993,12 @@
       if (typeof renderWorkoutsSettingsList === 'function') {
         renderWorkoutsSettingsList();
       }
+
+      if (btnAmoledToggle) {
+        btnAmoledToggle.title = document.body.classList.contains("amoled-mode")
+          ? (lang === 'vi' ? "Thoát chế độ Amoled" : "Exit Amoled Mode")
+          : (lang === 'vi' ? "Chế độ Amoled" : "Amoled Mode");
+      }
     }
 
     function switchToActiveTimerView() {
@@ -1951,6 +2009,10 @@
     // VIEW CONTROLLER
     // ----------------------------------------------------
     function switchView(viewName) {
+      if (viewName !== 'focus' && document.body.classList.contains("amoled-mode")) {
+        toggleAmoledMode(false);
+      }
+
       focusView.classList.add("hidden");
       breakView.classList.add("hidden");
       resetView.classList.add("hidden");
@@ -1996,6 +2058,9 @@
     // TIMING ENGINE (FOCUS & BREAK TIMER)
     // ----------------------------------------------------
     function resetTimer() {
+      if (document.body.classList.contains("amoled-mode")) {
+        toggleAmoledMode(false);
+      }
       clearInterval(timerInterval);
       timerInterval = null;
       timerStatus = 'idle';
@@ -2220,6 +2285,36 @@
         flashes--;
         if (flashes <= 0) clearInterval(interval);
       }, 600);
+    }
+
+    function toggleAmoledMode(forceState) {
+      const isAmoled = forceState !== undefined ? forceState : !document.body.classList.contains("amoled-mode");
+
+      if (isAmoled) {
+        document.body.classList.add("amoled-mode");
+        if (amoledToggleIcon) {
+          amoledToggleIcon.innerHTML = `<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>`;
+        }
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        }
+      } else {
+        document.body.classList.remove("amoled-mode");
+        if (amoledToggleIcon) {
+          amoledToggleIcon.innerHTML = `<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>`;
+        }
+        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        if (isFullscreen) {
+          if (document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          }
+        }
+      }
+      updateUIStrings();
     }
 
     // ----------------------------------------------------
@@ -2844,6 +2939,9 @@
 
       // Inside focus controls
       btnStartPause.addEventListener("click", toggleTimer);
+      if (btnAmoledToggle) {
+        btnAmoledToggle.addEventListener("click", () => toggleAmoledMode());
+      }
       btnSkipTimer.addEventListener("click", skipTimer);
       btnResetTimer.addEventListener("click", () => {
         const t = translations[currentLang];
@@ -2900,6 +2998,22 @@
         });
         folderScanner.addEventListener("change", handleFolderScanChange);
       }
+
+      document.addEventListener("fullscreenchange", () => {
+        const isFullscreen = !!document.fullscreenElement;
+        const hasAmoledClass = document.body.classList.contains("amoled-mode");
+        if (!isFullscreen && hasAmoledClass) {
+          toggleAmoledMode(false);
+        }
+      });
+
+      document.addEventListener("webkitfullscreenchange", () => {
+        const isFullscreen = !!document.webkitFullscreenElement;
+        const hasAmoledClass = document.body.classList.contains("amoled-mode");
+        if (!isFullscreen && hasAmoledClass) {
+          toggleAmoledMode(false);
+        }
+      });
     }
 
     // Run Initialization on Load

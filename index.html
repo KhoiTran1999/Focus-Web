@@ -274,7 +274,6 @@
       margin-bottom: 20px;
       background: radial-gradient(circle, rgba(255, 255, 255, 0.015) 0%, transparent 70%);
       border-radius: 50%;
-      cursor: pointer;
     }
 
     .progress-svg {
@@ -989,6 +988,11 @@
         transform: translateY(0);
       }
     }
+
+    #btnEditTimer:hover, #btnEditBreakTimer:hover {
+      fill: var(--accent) !important;
+      transform: scale(1.15);
+    }
   </style>
 </head>
 <body>
@@ -1058,7 +1062,12 @@
               </svg>
             </div>
             <div class="timer-display">
-              <span class="time-digits" id="timerDigits">45:00</span>
+              <div style="display: flex; align-items: center; justify-content: center; gap: 8px; pointer-events: auto;">
+                <span class="time-digits" id="timerDigits">45:00</span>
+                <button id="btnEditTimer" title="Edit Timer" style="border: none; background: transparent; padding: 4px; fill: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: fill 0.2s, transform 0.2s; outline: none; margin-top: -8px;">
+                  <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                </button>
+              </div>
               <span class="phase-label" id="timerPhaseLabel" data-t="focusMode">Focus Mode</span>
             </div>
           </div>
@@ -1093,7 +1102,13 @@
         <div class="break-view-container">
           <div style="text-align: center; margin-top: 10px;">
             <h3 style="color: var(--break-accent); font-weight: 700; letter-spacing: 0.05em; font-size: 1rem; text-transform: uppercase;" data-t="timeToMove">Time to Move!</h3>
-            <span style="font-size: 0.85rem; color: var(--text-secondary);"><span id="lblBreakLeft" data-t="breakLeft">Break Time Left: </span><strong id="breakTimeLeftDigits" style="font-variant-numeric: tabular-nums;">15:00</strong></span>
+            <span style="font-size: 0.85rem; color: var(--text-secondary); display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+              <span id="lblBreakLeft" data-t="breakLeft">Break Time Left: </span>
+              <strong id="breakTimeLeftDigits" style="font-variant-numeric: tabular-nums;">15:00</strong>
+              <button id="btnEditBreakTimer" title="Edit Break Timer" style="border: none; background: transparent; padding: 2px; fill: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: fill 0.2s, transform 0.2s; outline: none; margin-top: -2px;">
+                <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              </button>
+            </span>
           </div>
 
           <div class="stretch-card">
@@ -1408,6 +1423,9 @@
         configureSetsReps: "Sets & Reps",
         scanFolder: "Scan Workouts Folder",
         scanSelectFolder: "Select the listWorkoutGif folder to import workouts",
+        editTimerTitle: "Adjust Remaining Time",
+        minutes: "Minutes",
+        seconds: "Seconds",
         stretchesData: [
           { title: "Neck Tilt", desc: "Tilt your head right, drop left shoulder. Hold 15s. Reverse." },
           { title: "Shoulder Roll", desc: "Roll shoulders backwards in smooth circles. Release tension." },
@@ -1499,6 +1517,9 @@
         configureSetsReps: "Số hiệp & Số rep",
         scanFolder: "Quét thư mục bài tập",
         scanSelectFolder: "Chọn thư mục listWorkoutGif để nạp bài tập",
+        editTimerTitle: "Điều chỉnh thời gian còn lại",
+        minutes: "Phút",
+        seconds: "Giây",
         breathingData: ["Hít vào", "Giữ thở", "Thở ra", "Giữ thở"]
       }
     };
@@ -1693,7 +1714,6 @@
       }
 
       setupEventListeners();
-      setupTimerInteraction();
       checkWakeLockSupport();
       renderStats();
       updateUIStrings();
@@ -2197,82 +2217,59 @@
       timerInterval = setInterval(timerTick, tickRate);
     }
 
-    let isDraggingTimer = false;
+    let wasRunningBeforeEdit = false;
 
-    function handleProgressInteraction(e) {
-      if (currentMode === 'reset') return;
-      const container = document.querySelector(".progress-container");
-      if (!container) return;
+    function openEditTimerDialog() {
+      const dialog = document.getElementById("editTimerDialog");
+      const minInput = document.getElementById("editTimerMinutes");
+      const secInput = document.getElementById("editTimerSeconds");
 
-      const rect = container.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
+      const totalSecs = Math.round(timeLeft);
+      minInput.value = Math.floor(totalSecs / 60);
+      secInput.value = totalSecs % 60;
 
-      let clientX, clientY;
-      if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-      } else if (e.changedTouches && e.changedTouches.length > 0) {
-        clientX = e.changedTouches[0].clientX;
-        clientY = e.changedTouches[0].clientY;
+      if (timerStatus === 'running') {
+        wasRunningBeforeEdit = true;
+        clearInterval(timerInterval);
+        timerInterval = null;
       } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
+        wasRunningBeforeEdit = false;
       }
 
-      const dx = clientX - cx;
-      const dy = clientY - cy;
+      dialog.showModal();
+    }
 
-      let angleRad = Math.atan2(dy, dx) + Math.PI / 2;
-      if (angleRad < 0) {
-        angleRad += 2 * Math.PI;
-      }
+    function handleEditTimerSubmit(e) {
+      e.preventDefault();
+      const minInput = document.getElementById("editTimerMinutes");
+      const secInput = document.getElementById("editTimerSeconds");
+      const mins = Math.max(0, parseInt(minInput.value, 10) || 0);
+      const secs = Math.max(0, Math.min(59, parseInt(secInput.value, 10) || 0));
 
-      const percentDone = angleRad / (2 * Math.PI);
-      const ratio = 1 - percentDone;
-
-      const totalDuration = (currentMode === 'focus') ? focusMinutes * 60 : breakMinutes * 60;
-      timeLeft = Math.round(ratio * totalDuration);
-      timeLeft = Math.max(0, Math.min(totalDuration, timeLeft));
+      timeLeft = mins * 60 + secs;
 
       updateTimerDisplay();
       if (currentMode === 'focus') {
+        const totalDuration = focusMinutes * 60;
+        const ratio = totalDuration > 0 ? timeLeft / totalDuration : 1;
         updateProgressBar(ratio);
-        setSproutStage(percentDone * 100);
+        setSproutStage((1 - ratio) * 100);
       }
 
-      saveTimerState();
+      document.getElementById("editTimerDialog").close();
+
+      if (wasRunningBeforeEdit) {
+        startTimerRunning();
+      } else {
+        saveTimerState();
+      }
     }
 
-    function setupTimerInteraction() {
-      const container = document.querySelector(".progress-container");
-      if (!container) return;
-
-      const onStart = (e) => {
-        if (currentMode === 'reset') return;
-        isDraggingTimer = true;
-        handleProgressInteraction(e);
-        if (e.cancelable) e.preventDefault();
-      };
-
-      const onMove = (e) => {
-        if (!isDraggingTimer) return;
-        handleProgressInteraction(e);
-        if (e.cancelable) e.preventDefault();
-      };
-
-      const onEnd = () => {
-        isDraggingTimer = false;
-      };
-
-      container.addEventListener("mousedown", onStart);
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onEnd);
-
-      container.addEventListener("touchstart", onStart, { passive: false });
-      window.addEventListener("touchmove", onMove, { passive: false });
-      window.addEventListener("touchend", onEnd);
-      window.addEventListener("touchcancel", onEnd);
+    function handleEditTimerCancel() {
+      document.getElementById("editTimerDialog").close();
+      if (wasRunningBeforeEdit) {
+        startTimerRunning();
+      }
     }
 
     // ----------------------------------------------------
@@ -3217,6 +3214,27 @@
         folderScanner.addEventListener("change", handleFolderScanChange);
       }
 
+      // Edit Timer Dialog controls
+      const btnEditTimer = document.getElementById("btnEditTimer");
+      if (btnEditTimer) {
+        btnEditTimer.addEventListener("click", openEditTimerDialog);
+      }
+
+      const btnEditBreakTimer = document.getElementById("btnEditBreakTimer");
+      if (btnEditBreakTimer) {
+        btnEditBreakTimer.addEventListener("click", openEditTimerDialog);
+      }
+
+      const btnCancelEditTimer = document.getElementById("btnCancelEditTimer");
+      if (btnCancelEditTimer) {
+        btnCancelEditTimer.addEventListener("click", handleEditTimerCancel);
+      }
+
+      const editTimerForm = document.getElementById("editTimerForm");
+      if (editTimerForm) {
+        editTimerForm.addEventListener("submit", handleEditTimerSubmit);
+      }
+
       document.addEventListener("fullscreenchange", () => {
         const isFullscreen = !!document.fullscreenElement;
         const hasAmoledClass = document.body.classList.contains("amoled-mode");
@@ -3272,6 +3290,30 @@
 
       <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px;">
         <button type="button" id="btnCancelDialog" class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Edit Timer Dialog -->
+  <dialog id="editTimerDialog">
+    <form id="editTimerForm" method="dialog" style="display: flex; flex-direction: column; gap: 16px; min-width: 240px;">
+      <h3 id="editTimerTitle" style="font-size: 1.15rem; font-weight: 700; color: var(--accent);" data-t="editTimerTitle">Adjust Remaining Time</h3>
+
+      <div style="display: flex; gap: 12px; justify-content: center; align-items: center; margin: 10px 0;">
+        <div style="display: flex; flex-direction: column; gap: 6px; width: 70px;">
+          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; text-align: center;" data-t="minutes">Minutes</label>
+          <input type="number" id="editTimerMinutes" min="0" max="180" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); text-align: center; font-size: 1.25rem; outline: none;">
+        </div>
+        <span style="font-size: 1.5rem; font-weight: 700; margin-top: 18px; color: var(--text-muted);">:</span>
+        <div style="display: flex; flex-direction: column; gap: 6px; width: 70px;">
+          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; text-align: center;" data-t="seconds">Seconds</label>
+          <input type="number" id="editTimerSeconds" min="0" max="59" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); text-align: center; font-size: 1.25rem; outline: none;">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px;">
+        <button type="button" id="btnCancelEditTimer" class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="cancel">Cancel</button>
         <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="save">Save</button>
       </div>
     </form>

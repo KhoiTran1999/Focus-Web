@@ -25,6 +25,7 @@ function runSanityCheck() {
 
   // Create mock DOM environment
   const storage = {};
+  const elementCache = {};
   const mockWindow = {
     addEventListener: () => {},
     document: {
@@ -47,20 +48,23 @@ function runSanityCheck() {
         }
       },
       getElementById: (id) => {
-        // Return dummy elements with necessary APIs
-        const element = {
-          addEventListener: () => {},
-          classList: { add: () => {}, remove: () => {} },
-          style: {},
-          setAttribute: () => {},
-          appendChild: () => {},
-          querySelectorAll: () => [],
-          cloneNode: function() { return Object.assign({}, this); }
-        };
-        element.parentNode = {
-          replaceChild: (newChild, oldChild) => {}
-        };
-        return element;
+        if (!elementCache[id]) {
+          elementCache[id] = {
+            addEventListener: () => {},
+            classList: { add: () => {}, remove: () => {} },
+            style: {},
+            setAttribute: () => {},
+            appendChild: () => {},
+            querySelectorAll: () => [],
+            cloneNode: function() { return Object.assign({}, this); },
+            close: () => {},
+            showModal: () => {}
+          };
+          elementCache[id].parentNode = {
+            replaceChild: (newChild, oldChild) => {}
+          };
+        }
+        return elementCache[id];
       }
     },
     localStorage: {
@@ -168,45 +172,31 @@ function runSanityCheck() {
     }
     console.log('✅ Success: Timer state persistence test passed.');
 
-    // Test progress circle interaction math
-    console.log('Running test for progress circle interaction math...');
-    const handleProgressInteraction = context.handleProgressInteraction;
-    if (typeof handleProgressInteraction !== 'function') {
-      throw new Error('handleProgressInteraction is not a function in context!');
+    // Test timer edit submit logic
+    console.log('Running test for timer edit submit...');
+    const handleEditTimerSubmit = context.handleEditTimerSubmit;
+    if (typeof handleEditTimerSubmit !== 'function') {
+      throw new Error('handleEditTimerSubmit is not a function in context!');
     }
 
     // Set configuration
-    vm.runInContext('focusMinutes = 45; currentMode = "focus";', context);
+    vm.runInContext('focusMinutes = 45; currentMode = "focus"; timeLeft = 2700;', context);
 
-    // 1. Drag to 12 o'clock (0% done, 100% time left)
-    handleProgressInteraction({ clientX: 200, clientY: 50 });
-    let interactedTime = vm.runInContext('timeLeft', context);
-    if (interactedTime !== 2700) {
-      throw new Error(`Expected 2700s at 12 o'clock, got ${interactedTime}`);
+    // Mock form inputs values
+    const minInput = mockWindow.document.getElementById('editTimerMinutes');
+    const secInput = mockWindow.document.getElementById('editTimerSeconds');
+    minInput.value = 25;
+    secInput.value = 30;
+
+    // Call submit handler (with mock event preventDefault)
+    handleEditTimerSubmit({ preventDefault: () => {} });
+
+    // Verify timeLeft in context was updated correctly (25m 30s = 1530s)
+    const newTimeLeft = vm.runInContext('timeLeft', context);
+    if (newTimeLeft !== 1530) {
+      throw new Error(`Expected timeLeft to be 1530, got ${newTimeLeft}`);
     }
-
-    // 2. Drag to 3 o'clock (25% done, 75% time left)
-    handleProgressInteraction({ clientX: 350, clientY: 200 });
-    interactedTime = vm.runInContext('timeLeft', context);
-    if (interactedTime !== 2025) {
-      throw new Error(`Expected 2025s at 3 o'clock, got ${interactedTime}`);
-    }
-
-    // 3. Drag to 6 o'clock (50% done, 50% time left)
-    handleProgressInteraction({ clientX: 200, clientY: 350 });
-    interactedTime = vm.runInContext('timeLeft', context);
-    if (interactedTime !== 1350) {
-      throw new Error(`Expected 1350s at 6 o'clock, got ${interactedTime}`);
-    }
-
-    // 4. Drag to 9 o'clock (75% done, 25% time left)
-    handleProgressInteraction({ clientX: 50, clientY: 200 });
-    interactedTime = vm.runInContext('timeLeft', context);
-    if (interactedTime !== 675) {
-      throw new Error(`Expected 675s at 9 o'clock, got ${interactedTime}`);
-    }
-
-    console.log('✅ Success: Progress circle interaction math test passed.');
+    console.log('✅ Success: Timer edit submit test passed.');
   } catch (err) {
     console.error('❌ Sanity check failed!');
     console.error(err);

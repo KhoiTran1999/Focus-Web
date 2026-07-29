@@ -2346,6 +2346,9 @@
       const workout = hiitWorkouts[index];
       const t = translations[currentLang];
 
+      const isFileProtocol = typeof window !== 'undefined' && window.location && window.location.protocol === 'file:';
+      const gifSrc = isFileProtocol ? workout.gif : (workout.gif + (workout.gif.includes("?") ? "&" : "?") + "t=" + Date.now());
+
       if (workoutGifDisplay && typeof workoutGifDisplay.cloneNode === 'function' && workoutGifDisplay.parentNode) {
         // Recreate image element to force mobile browsers to instantiate a new decoding pipeline and restart the animation
         const newImg = workoutGifDisplay.cloneNode(true);
@@ -2353,7 +2356,7 @@
 
         // Delay setting src to ensure DOM layout reflow and transitions are complete
         setTimeout(() => {
-          newImg.src = workout.gif + (workout.gif.includes("?") ? "&" : "?") + "t=" + Date.now();
+          newImg.src = gifSrc;
         }, 100);
 
         workoutGifDisplay.parentNode.replaceChild(newImg, workoutGifDisplay);
@@ -2361,7 +2364,7 @@
       } else if (workoutGifDisplay) {
         workoutGifDisplay.src = "";
         setTimeout(() => {
-          workoutGifDisplay.src = workout.gif + (workout.gif.includes("?") ? "&" : "?") + "t=" + Date.now();
+          workoutGifDisplay.src = gifSrc;
         }, 100);
       }
 

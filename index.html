@@ -274,12 +274,14 @@
       margin-bottom: 20px;
       background: radial-gradient(circle, rgba(255, 255, 255, 0.015) 0%, transparent 70%);
       border-radius: 50%;
+      cursor: pointer;
     }
 
     .progress-svg {
       transform: rotate(-90deg);
       width: 100%;
       height: 100%;
+      pointer-events: none;
     }
 
     .progress-bg-circle {
@@ -310,6 +312,7 @@
       z-index: 1;
       transform: translateY(-38px);
       animation: floatGrowth 6s ease-in-out infinite;
+      pointer-events: none;
     }
 
     @keyframes floatGrowth {
@@ -1683,14 +1686,23 @@
     function init() {
       loadSettings();
       loadStats();
-      resetTimer();
+
+      const restored = restoreTimerState();
+      if (!restored) {
+        resetTimer();
+      }
+
       setupEventListeners();
+      setupTimerInteraction();
       checkWakeLockSupport();
       renderStats();
       updateUIStrings();
 
       // Auto re-acquire wake lock on visibility change (active tab returns)
       document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      // Save state on page unload
+      window.addEventListener("beforeunload", saveTimerState);
     }
 
     function loadSettings() {
@@ -2055,6 +2067,210 @@
     }
 
     // ----------------------------------------------------
+    // TIMER PERSISTENCE & INTERACTION
+    // ----------------------------------------------------
+    const TIMER_STATE_KEY = "focus_station_timer_state";
+
+    function updatePlayPauseButtonUI() {
+      const t = translations[currentLang];
+      if (timerStatus === 'running') {
+        btnStartPause.classList.remove("btn-primary");
+        btnStartPause.classList.add("btn-secondary");
+        playPauseIcon.innerHTML = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`;
+        playPauseText.innerText = t.pauseFocus;
+      } else {
+        btnStartPause.classList.remove("btn-secondary");
+        btnStartPause.classList.add("btn-primary");
+        playPauseIcon.innerHTML = `<path d="M8 5v14l11-7z"/>`;
+        playPauseText.innerText = (timerStatus === 'paused') ? t.resumeFocus : t.startFocus;
+      }
+    }
+
+    function saveTimerState() {
+      if (currentMode === 'reset') return;
+      const state = {
+        timeLeft: timeLeft,
+        currentMode: currentMode,
+        timerStatus: timerStatus,
+        lastSavedTime: Date.now(),
+        totalFocusSecondsElapsedThisSession: totalFocusSecondsElapsedThisSession,
+        hiitSetsCompleted: hiitSetsCompleted,
+        activeHiitIndex: activeHiitIndex,
+        hiitQueue: hiitQueue
+      };
+      localStorage.setItem(TIMER_STATE_KEY, JSON.stringify(state));
+    }
+
+    function restoreTimerState() {
+      const raw = localStorage.getItem(TIMER_STATE_KEY);
+      if (!raw) return false;
+      try {
+        const state = JSON.parse(raw);
+        if (!state) return false;
+
+        currentMode = state.currentMode || 'focus';
+        timerStatus = state.timerStatus || 'idle';
+        totalFocusSecondsElapsedThisSession = state.totalFocusSecondsElapsedThisSession || 0;
+        activeHiitIndex = (state.activeHiitIndex !== undefined) ? state.activeHiitIndex : -1;
+        hiitSetsCompleted = state.hiitSetsCompleted || 0;
+        hiitQueue = state.hiitQueue || [];
+
+        const lastSavedTime = state.lastSavedTime || Date.now();
+        const restoredTimeLeft = state.timeLeft || 0;
+
+        if (timerStatus === 'running') {
+          const elapsed = (Date.now() - lastSavedTime) / 1000;
+          if (elapsed < restoredTimeLeft) {
+            timeLeft = restoredTimeLeft - elapsed;
+            if (currentMode === 'focus') {
+              totalFocusSecondsElapsedThisSession += elapsed;
+            }
+            startTimerRunning();
+          } else {
+            // Timer expired while away
+            const remainingElapsed = elapsed - restoredTimeLeft;
+            if (currentMode === 'focus') {
+              const earnedMinutes = Math.round((totalFocusSecondsElapsedThisSession + restoredTimeLeft) / 60);
+              if (earnedMinutes > 0) {
+                recordFocusMinutes(earnedMinutes);
+              }
+
+              // Try to transition to break
+              currentMode = 'break';
+              const breakSecs = breakMinutes * 60;
+              if (remainingElapsed < breakSecs) {
+                timeLeft = breakSecs - remainingElapsed;
+                startTimerRunning();
+              } else {
+                // Break also expired
+                recordBreakCompleted();
+                currentMode = 'focus';
+                timeLeft = focusMinutes * 60;
+                timerStatus = 'idle';
+                totalFocusSecondsElapsedThisSession = 0;
+              }
+            } else {
+              // Break expired
+              recordBreakCompleted();
+              currentMode = 'focus';
+              timeLeft = focusMinutes * 60;
+              timerStatus = 'idle';
+              totalFocusSecondsElapsedThisSession = 0;
+            }
+          }
+        } else {
+          timeLeft = restoredTimeLeft;
+          updatePlayPauseButtonUI();
+        }
+
+        // Apply UI updates based on restored mode
+        switchView(currentMode);
+        updateTimerDisplay();
+
+        const totalDuration = (currentMode === 'focus') ? focusMinutes * 60 : breakMinutes * 60;
+        const ratio = totalDuration > 0 ? timeLeft / totalDuration : 1;
+
+        if (currentMode === 'focus') {
+          updateProgressBar(ratio);
+          setSproutStage((1 - ratio) * 100);
+        } else if (currentMode === 'break') {
+          if (activeHiitIndex >= 0 && activeHiitIndex < hiitWorkouts.length) {
+            loadHiitWorkout(activeHiitIndex);
+          }
+        }
+
+        return true;
+      } catch (e) {
+        console.error("Failed to restore timer state", e);
+        return false;
+      }
+    }
+
+    function startTimerRunning() {
+      const t = translations[currentLang];
+      timerStatus = 'running';
+      updatePlayPauseButtonUI();
+      requestWakeLock();
+      lastTickTime = Date.now();
+      const tickRate = isDebugMode ? 16.67 : 1000;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(timerTick, tickRate);
+    }
+
+    let isDraggingTimer = false;
+
+    function handleProgressInteraction(e) {
+      if (currentMode === 'reset') return;
+      const container = document.querySelector(".progress-container");
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      let clientX, clientY;
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      const dx = clientX - cx;
+      const dy = clientY - cy;
+
+      let angleRad = Math.atan2(dy, dx) + Math.PI / 2;
+      if (angleRad < 0) {
+        angleRad += 2 * Math.PI;
+      }
+
+      const percentDone = angleRad / (2 * Math.PI);
+      const ratio = 1 - percentDone;
+
+      const totalDuration = (currentMode === 'focus') ? focusMinutes * 60 : breakMinutes * 60;
+      timeLeft = Math.round(ratio * totalDuration);
+      timeLeft = Math.max(0, Math.min(totalDuration, timeLeft));
+
+      updateTimerDisplay();
+      if (currentMode === 'focus') {
+        updateProgressBar(ratio);
+        setSproutStage(percentDone * 100);
+      }
+
+      saveTimerState();
+    }
+
+    function setupTimerInteraction() {
+      const container = document.querySelector(".progress-container");
+      if (!container) return;
+
+      const onStart = (e) => {
+        if (currentMode === 'reset') return;
+        isDraggingTimer = true;
+        handleProgressInteraction(e);
+        e.preventDefault();
+      };
+
+      const onMove = (e) => {
+        if (!isDraggingTimer) return;
+        handleProgressInteraction(e);
+      };
+
+      const onEnd = () => {
+        isDraggingTimer = false;
+      };
+
+      container.addEventListener("mousedown", onStart);
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onEnd);
+
+      container.addEventListener("touchstart", onStart, { passive: false });
+      window.addEventListener("touchmove", onMove, { passive: false });
+      window.addEventListener("touchend", onEnd);
+    }
+
+    // ----------------------------------------------------
     // TIMING ENGINE (FOCUS & BREAK TIMER)
     // ----------------------------------------------------
     function resetTimer() {
@@ -2070,11 +2286,7 @@
         timeLeft = focusMinutes * 60;
         updateTimerDisplay();
         updateProgressBar(1);
-
-        btnStartPause.classList.remove("btn-secondary");
-        btnStartPause.classList.add("btn-primary");
-        playPauseIcon.innerHTML = `<path d="M8 5v14l11-7z"/>`;
-        playPauseText.innerText = t.startFocus;
+        updatePlayPauseButtonUI();
         brandTitle.innerText = t.brand;
 
         // Sprout reset
@@ -2087,6 +2299,7 @@
         updateTimerDisplay();
         initHiitSequence();
       }
+      saveTimerState();
     }
 
     function toggleTimer() {
@@ -2094,10 +2307,7 @@
       if (timerStatus === 'idle' || timerStatus === 'paused') {
         // Start or Resume
         timerStatus = 'running';
-        btnStartPause.classList.remove("btn-primary");
-        btnStartPause.classList.add("btn-secondary");
-        playPauseIcon.innerHTML = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`;
-        playPauseText.innerText = t.pauseFocus;
+        updatePlayPauseButtonUI();
 
         // Request wake lock when session begins
         requestWakeLock();
@@ -2111,10 +2321,7 @@
       } else {
         // Pause
         timerStatus = 'paused';
-        btnStartPause.classList.remove("btn-secondary");
-        btnStartPause.classList.add("btn-primary");
-        playPauseIcon.innerHTML = `<path d="M8 5v14l11-7z"/>`;
-        playPauseText.innerText = t.resumeFocus;
+        updatePlayPauseButtonUI();
 
         clearInterval(timerInterval);
         timerInterval = null;
@@ -2122,6 +2329,7 @@
         // Release wake lock temporarily on pause
         releaseWakeLock();
       }
+      saveTimerState();
     }
 
     function timerTick() {
@@ -2157,6 +2365,8 @@
           const percentDone = (1 - ratio) * 100;
           setSproutStage(percentDone);
         }
+
+        saveTimerState();
       } else {
         // Timer reached zero!
         handlePhaseComplete();
@@ -2242,6 +2452,7 @@
         switchView('focus');
         resetTimer();
       }
+      saveTimerState();
     }
 
     function skipTimer() {
@@ -2269,6 +2480,7 @@
           switchView('focus');
           resetTimer();
         }
+        saveTimerState();
       }
     }
 
@@ -2510,6 +2722,7 @@
           if (hiitSetsCompleted === setsCount) {
             showToast(t.workoutCompleted, "🎉 Keep it up!", false, "good");
           }
+          saveTimerState();
         });
 
         tracker.appendChild(btn);

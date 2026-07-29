@@ -1,0 +1,2689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus & Wellness Desk Station</title>
+  <style>
+    /* CSS custom properties from dataviz palette.md & UI parameters */
+    :root {
+      color-scheme: dark;
+
+      /* Dark Theme (Focus & Core UI) */
+      --bg-page: #0d0d0d;
+      --bg-surface: #1a1a19;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --border-color: rgba(255, 255, 255, 0.10);
+      --accent: #3987e5; /* Categorical slot 1 (Blue) */
+      --accent-muted: rgba(57, 135, 229, 0.2);
+
+      /* Break Theme (Warm/Alert values) */
+      --break-accent: #d95926; /* Categorical slot 2 (Orange) */
+      --break-accent-muted: rgba(217, 89, 38, 0.2);
+
+      /* Status Palette */
+      --status-good: #0ca30c;
+      --status-warning: #fab219;
+      --status-serious: #ec835a;
+      --status-critical: #d03b3b;
+
+      --font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Reset & Base Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      transition: background-color 0.5s ease, color 0.5s ease;
+    }
+
+    /* Main Container optimized for portrait/mobile viewport */
+    .station-container {
+      width: 100%;
+      max-width: 440px;
+      height: 100vh;
+      max-height: 850px;
+      background-color: var(--bg-surface);
+      border-radius: 0;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: background-color 0.5s ease;
+    }
+
+    /* Desk phone / tablet card mode for wider screens */
+    @media (min-width: 441px) {
+      body {
+        background-color: var(--bg-page);
+        padding: 20px;
+      }
+      .station-container {
+        height: calc(100vh - 40px);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      }
+    }
+
+    /* Header Bar */
+    header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-logo {
+      width: 24px;
+      height: 24px;
+      fill: var(--accent);
+      transition: fill 0.5s ease;
+    }
+
+    .brand-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .header-indicators {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .indicator-icon {
+      width: 20px;
+      height: 20px;
+      fill: var(--text-muted);
+      transition: fill 0.3s ease;
+    }
+
+    .indicator-icon.active {
+      fill: var(--accent);
+      filter: drop-shadow(0 0 4px var(--accent));
+    }
+
+    /* Screen Views */
+    .view-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .view.hidden {
+      display: none;
+      opacity: 0;
+    }
+
+    /* Bottom Navigation */
+    nav {
+      display: flex;
+      border-top: 1px solid var(--border-color);
+      background-color: rgba(26, 26, 25, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 10;
+    }
+
+    .nav-tab {
+      flex: 1;
+      padding: 14px 0;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-family);
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .nav-tab svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    .nav-tab.active {
+      color: var(--accent);
+    }
+
+    .nav-tab:hover {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Timer Elements */
+    .timer-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      width: 100%;
+      position: relative;
+    }
+
+    .progress-container {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .progress-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .progress-bg-circle {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.04);
+      stroke-width: 10;
+    }
+
+    .progress-bar-circle {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 754; /* 2 * PI * 120 (radius) */
+      stroke-dashoffset: 754;
+      transition: stroke-dashoffset 1s linear, stroke 0.5s ease;
+    }
+
+    /* Growth Animation Inside Circle */
+    .growth-wrapper {
+      position: absolute;
+      width: 160px;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    .growth-svg {
+      width: 80px;
+      height: 80px;
+      fill: var(--accent);
+      opacity: 0.15;
+      transition: transform 1s ease, fill 0.5s ease, opacity 0.5s ease;
+    }
+
+    .timer-display {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .time-digits {
+      font-size: 3.2rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .phase-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      transition: color 0.5s ease;
+    }
+
+    /* Buttons & Controls */
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      width: 100%;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-family: var(--font-family);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 14px 28px;
+      border-radius: 50px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .btn:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+      padding: 16px 36px;
+      font-size: 1.05rem;
+      box-shadow: 0 4px 16px var(--accent-muted);
+    }
+
+    .btn-primary:hover {
+      background-color: #4a94ec;
+      border-color: #4a94ec;
+      box-shadow: 0 6px 20px var(--accent-muted);
+    }
+
+    .btn-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      padding: 0;
+    }
+
+    .btn-secondary {
+      color: var(--text-secondary);
+    }
+
+    /* Posture & Hydration Toast Overlay */
+    .alert-toast {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--status-warning);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 100;
+      transform: translateY(-120%);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .alert-toast.visible {
+      transform: translateY(0);
+    }
+
+    .toast-icon-container {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background-color: rgba(250, 178, 25, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .toast-icon {
+      width: 24px;
+      height: 24px;
+      fill: var(--status-warning);
+    }
+
+    .toast-body {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 2px;
+      color: var(--status-warning);
+    }
+
+    .toast-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.3;
+    }
+
+    /* Stretch Exercise View (Break Mode) */
+    .break-view-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      justify-content: space-between;
+    }
+
+    .stretch-card {
+      background-color: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      width: 100%;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      flex: 1;
+      justify-content: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .stretch-graphic-container {
+      width: 240px;
+      height: 240px;
+      background-color: rgba(255, 255, 255, 0.02);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .stretch-info {
+      text-align: center;
+    }
+
+    .stretch-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    .stretch-instructions {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    /* Quick Reset (Breathing) View */
+    .breathing-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .breathing-circle-outer {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background-color: rgba(57, 135, 229, 0.05);
+      border: 1px solid rgba(57, 135, 229, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 40px;
+    }
+
+    .breathing-circle-inner {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background-color: var(--accent);
+      opacity: 0.7;
+      transition: transform 4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 30px var(--accent-muted);
+    }
+
+    .breathing-instruction {
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+      min-height: 2.4rem;
+    }
+
+    .breathing-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .breathing-timer {
+      position: absolute;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      pointer-events: none;
+    }
+
+    /* Stats View */
+    .stats-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background-color: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-lbl {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .chart-container {
+      background-color: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 16px;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .chart-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .chart-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .svg-chart {
+      width: 100%;
+      height: 180px;
+    }
+
+    /* Settings View */
+    .settings-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .settings-group-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .setting-item {
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .setting-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .setting-label {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .setting-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .setting-control input[type="number"] {
+      width: 70px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-family: var(--font-family);
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    .setting-control input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    .danger-zone {
+      margin-top: 10px;
+    }
+
+    /* Screen Wake Lock Info Indicator badge */
+    .wakelock-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background-color: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color);
+      padding: 4px 8px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .wakelock-badge.locked {
+      background-color: rgba(12, 163, 12, 0.1);
+      border-color: rgba(12, 163, 12, 0.3);
+      color: var(--status-good);
+    }
+
+    /* Warm-alert colors override when in break mode */
+    .station-container.break-mode-active {
+      --bg-page: #0f0a07;
+      --bg-surface: #1b130e;
+      --accent: var(--break-accent);
+      --accent-muted: var(--break-accent-muted);
+      border-color: rgba(217, 89, 38, 0.2);
+    }
+
+    .station-container.break-mode-active header {
+      border-bottom-color: rgba(217, 89, 38, 0.15);
+    }
+
+    .station-container.break-mode-active nav {
+      border-top-color: rgba(217, 89, 38, 0.15);
+    }
+
+    /* Dialog Styles */
+    dialog {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      color: var(--text-primary);
+      padding: 20px;
+      max-width: 90%;
+      width: 380px;
+      margin: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="station-container" id="stationContainer">
+    <!-- Posture & Hydration Notification Alert (Toast) -->
+    <div class="alert-toast" id="alertToast">
+      <div class="toast-icon-container" id="toastIconContainer">
+        <svg class="toast-icon" viewBox="0 0 24 24" id="toastIcon">
+          <!-- Dynamically swapped SVG -->
+        </svg>
+      </div>
+      <div class="toast-body">
+        <div class="toast-title" id="toastTitle">Straighten Back!</div>
+        <div class="toast-desc" id="toastDesc">Check your sitting posture. Drop your shoulders and extend your spine.</div>
+      </div>
+    </div>
+
+    <!-- Header bar -->
+    <header>
+      <div class="brand">
+        <svg class="brand-logo" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+        </svg>
+        <span class="brand-title" id="brandTitle" data-t="brand">Focus Station</span>
+      </div>
+
+      <div class="header-indicators">
+        <!-- Screen Wake Lock Badge indicator -->
+        <div class="wakelock-badge" id="wakeLockBadge">
+          <svg style="width:12px; height:12px; fill:currentColor; margin-right:2px;" viewBox="0 0 24 24">
+            <path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2zm1 17.93V19a1 1 0 0 1-2 0v-1.07A8 8 0 0 1 4.07 13H5a1 1 0 0 1 0-2h-.93A8 8 0 0 1 11 4.07V5a1 1 0 0 1 2 0v-.93A8 8 0 0 1 19.93 11H19a1 1 0 0 1 0 2h.93A8 8 0 0 1 13 17.93z"/>
+          </svg>
+          <span id="wakeLockText">Lock Off</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Views Scroll Area -->
+    <div class="view-content">
+
+      <!-- FOCUS VIEW -->
+      <div class="view" id="focusView">
+        <div style="text-align: center; width: 100%; margin-top: 10px;">
+          <!-- Small posture/hydration quick-check panel -->
+          <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 5px;">
+            <svg class="indicator-icon" id="quickPosture" viewBox="0 0 24 24" title="Posture Check">
+              <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm7 7h-6v11h-2V13H9V9H3V7h16v2z"/>
+            </svg>
+            <svg class="indicator-icon" id="quickHydration" viewBox="0 0 24 24" title="Hydration Check">
+              <path d="M12 2S6 10 6 14c0 3.3 2.7 6 6 6s6-2.7 6-6c0-4-6-12-6-12zm0 15.5c-2 0-3.5-1.5-3.5-3.5 0-2.3 2.5-5.6 3.5-6.8 1 1.2 3.5 4.5 3.5 6.8 0 2-1.5 3.5-3.5 3.5z"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="timer-section">
+          <div class="progress-container">
+            <svg class="progress-svg" viewBox="0 0 260 260">
+              <circle class="progress-bg-circle" cx="130" cy="130" r="120"></circle>
+              <circle class="progress-bar-circle" id="focusProgressBar" cx="130" cy="130" r="120"></circle>
+            </svg>
+            <!-- Minimal SVG Tree/Energy graphic -->
+            <div class="growth-wrapper">
+              <svg class="growth-svg" id="growthSvg" viewBox="0 0 24 24">
+                <!-- Tiny sprout, grows as percentage increases -->
+                <path id="growthPath" d="M12 22v-5M12 17c-2-1-4-1-6 0 2-3 5-3 6 0zm0 0c2-1 4-1 6 0-2-3-5-3-6 0z"/>
+              </svg>
+            </div>
+            <div class="timer-display">
+              <span class="time-digits" id="timerDigits">45:00</span>
+              <span class="phase-label" id="timerPhaseLabel" data-t="focusMode">Focus Mode</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="width: 100%;">
+          <div class="controls-row">
+            <button class="btn btn-icon btn-secondary" id="btnStatsShortcut" title="View Stats">
+              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            </button>
+            <button class="btn btn-primary" id="btnStartPause">
+              <svg viewBox="0 0 24 24" id="playPauseIcon"><path d="M8 5v14l11-7z"/></svg>
+              <span id="playPauseText" data-t="startFocus">Start Focus</span>
+            </button>
+            <button class="btn btn-icon btn-secondary" id="btnSkipTimer" title="Skip to break">
+              <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 10px;">
+            <button class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.85rem;" id="btnResetTimer" data-t="resetMode">Reset Mode</button>
+            <button class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.85rem; margin-left: 8px;" id="btnQuickResetTrigger" data-t="quickReset">Quick 2m Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BREAK VIEW (WELLNESS / MOVEMENT) -->
+      <div class="view hidden" id="breakView">
+        <div class="break-view-container">
+          <div style="text-align: center; margin-top: 10px;">
+            <h3 style="color: var(--break-accent); font-weight: 700; letter-spacing: 0.05em; font-size: 1rem; text-transform: uppercase;" data-t="timeToMove">Time to Move!</h3>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);"><span id="lblBreakLeft" data-t="breakLeft">Break Time Left: </span><strong id="breakTimeLeftDigits" style="font-variant-numeric: tabular-nums;">15:00</strong></span>
+          </div>
+
+          <div class="stretch-card">
+            <div class="stretch-graphic-container" id="breakGraphicContainer">
+              <!-- Animated WebP/GIF for HIIT workout -->
+              <img id="workoutGifDisplay" style="width: 100%; height: 100%; object-fit: contain;" src="" alt="Workout Guide">
+            </div>
+
+            <div class="stretch-info">
+              <div class="stretch-title" id="stretchTitle">Workout</div>
+              <div class="stretch-instructions" id="stretchDesc">Tập luyện HIIT để vận động cơ thể.</div>
+            </div>
+
+            <div id="workoutSetsSection" style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%;">
+              <div style="font-size: 1.1rem; font-weight: 700; color: var(--break-accent);" id="workoutSetsTarget">3 Sets x 20 Reps</div>
+              <div style="display: flex; gap: 12px; margin-top: 4px;" id="workoutSetsTracker">
+                <!-- Clickable buttons for sets -->
+              </div>
+            </div>
+          </div>
+
+          <div class="controls-row" style="margin-bottom: 20px;">
+            <button class="btn btn-primary" id="btnNextStretch" data-t="randomizeWorkout">Change Exercise</button>
+            <button class="btn btn-secondary" id="btnSkipBreak" data-t="skipBreak">Skip Break</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK RESET BREATHING VIEW -->
+      <div class="view hidden" id="resetView">
+        <div class="breathing-container">
+          <div class="breathing-instruction" id="breathingInstruction">Get Ready</div>
+
+          <div class="breathing-circle-outer">
+            <div class="breathing-circle-inner" id="breathingCircle"></div>
+            <div class="breathing-timer" id="breathingTimer">4</div>
+          </div>
+
+          <div class="breathing-subtitle" id="breathingSubtitle" data-t="boxBreathing">Box Breathing: 4s cycles for 2 mins</div>
+
+          <button class="btn btn-secondary" id="btnExitBreathing" data-t="exitReset">Exit Reset</button>
+        </div>
+      </div>
+
+      <!-- STATS VIEW -->
+      <div class="view hidden" id="statsView">
+        <h2 style="font-size: 1.25rem; font-weight: 700; align-self: flex-start; margin-bottom: 16px;" data-t="dailyStats">Daily Statistics</h2>
+
+        <div class="stats-summary-grid">
+          <div class="stat-card">
+            <div class="stat-val" id="statFocusTime">0</div>
+            <div class="stat-lbl" data-t="focusMins">Focus Mins</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="statBreaks">0</div>
+            <div class="stat-lbl" data-t="breaks">Breaks</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="statStretches">0</div>
+            <div class="stat-lbl" data-t="stretches">Stretches</div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title" data-t="weeklyHistory">Weekly Focus History</div>
+              <div class="chart-subtitle" data-t="chartSubtitle">Focus duration per day (minutes)</div>
+            </div>
+          </div>
+
+          <!-- SVG Bar Chart -->
+          <svg class="svg-chart" id="statsChart" viewBox="0 0 340 180">
+            <!-- Render axes and bars dynamically in JS -->
+          </svg>
+        </div>
+
+        <div class="controls-row" style="margin-top: 16px; margin-bottom: 16px;">
+          <button class="btn btn-secondary" id="btnBackFromStats" data-t="closeStats">Close Stats</button>
+        </div>
+      </div>
+
+      <!-- SETTINGS VIEW -->
+      <div class="view hidden" id="settingsView">
+        <h2 style="font-size: 1.25rem; font-weight: 700; align-self: flex-start; margin-bottom: 20px;" data-t="settings">Settings</h2>
+
+        <div class="settings-list">
+          <div class="settings-group">
+            <span class="settings-group-label" data-t="durationConfig">Duration Config</span>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label" data-t="focusPeriod">Focus Period</span>
+                <span class="setting-desc" data-t="focusDesc">Duration of focus phase in minutes</span>
+              </div>
+              <div class="setting-control">
+                <input type="number" id="inputFocusTime" min="5" max="180" value="45">
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label" data-t="breakPeriod">Break Period</span>
+                <span class="setting-desc" data-t="breakDesc">Duration of break phase in minutes</span>
+              </div>
+              <div class="setting-control">
+                <input type="number" id="inputBreakTime" min="1" max="60" value="15">
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label" id="settingLabelLang" data-t="settingLabelLang">Language / Ngôn ngữ</span>
+                <span class="setting-desc" id="settingDescLang" data-t="settingDescLang">Select interface language</span>
+              </div>
+              <div class="setting-control">
+                <select id="selectLang" style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 8px 12px; border-radius: 8px; font-family: var(--font-family); font-weight: 600; font-size: 0.9rem; outline: none; cursor: pointer;">
+                  <option value="en">English</option>
+                  <option value="vi">Tiếng Việt</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <span class="settings-group-label" data-t="workoutConfig">Workout Config / Thiết lập bài tập</span>
+            <div id="workoutsSettingsList">
+              <!-- Rendered dynamically in JS -->
+            </div>
+            <button class="btn btn-secondary" id="btnAddWorkout" style="width: 100%; justify-content: center; margin-top: 8px; font-size: 0.9rem;">
+              <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              <span data-t="addWorkout">Add Workout</span>
+            </button>
+            <input type="file" id="folderScanner" webkitdirectory directory style="display: none;">
+            <button class="btn btn-secondary" id="btnScanFolder" style="width: 100%; justify-content: center; margin-top: 8px; font-size: 0.9rem;">
+              <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px;"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm-1.3 11.2a2.97 2.97 0 0 1-.7-2c0-1.66 1.34-3 3-3a2.97 2.97 0 0 1 2 .7l1.46-1.46C15.22 8.44 13.7 8 12 8c-3.31 0-6 2.69-6 6 0 1.7.44 3.22 1.24 4.54l1.46-1.34z"/></svg>
+              <span data-t="scanFolder">Scan Workouts Folder</span>
+            </button>
+          </div>
+
+          <div class="settings-group">
+            <span class="settings-group-label" data-t="wellnessReminders">Wellness Reminders</span>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label" data-t="postureAlerts">Posture & Hydration Alerts</span>
+                <span class="setting-desc" data-t="postureAlertsDesc">Gentle pop-up notifications every 20m</span>
+              </div>
+              <div class="setting-control">
+                <label class="switch">
+                  <input type="checkbox" id="checkboxAlerts" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label" data-t="devDebug">Developer Debug Mode</span>
+                <span class="setting-desc" data-t="devDebugDesc">Speed up timers (1s = 1m) for testing</span>
+              </div>
+              <div class="setting-control">
+                <label class="switch">
+                  <input type="checkbox" id="checkboxDebug">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group danger-zone">
+            <button class="btn btn-secondary" style="border-color: var(--status-critical); color: var(--status-critical); width: 100%; justify-content: center;" id="btnClearData" data-t="clearData">
+              <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              Clear Local Data
+            </button>
+          </div>
+        </div>
+
+        <div class="controls-row" style="margin-top: 16px; margin-bottom: 16px;">
+          <button class="btn btn-primary" id="btnSaveSettings" data-t="saveSettings">Save Settings</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Navigation tabs -->
+    <nav id="bottomNav">
+      <button class="nav-tab active" id="navFocus" data-t="tabFocus">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-13c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
+        Focus
+      </button>
+      <button class="nav-tab" id="navStats" data-t="tabStats">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+        Statistics
+      </button>
+      <button class="nav-tab" id="navSettings" data-t="tabSettings">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        Settings
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    // State Variables
+    let focusMinutes = 45;
+    let breakMinutes = 15;
+    let enableAlerts = true;
+    let isDebugMode = false;
+    let currentLang = 'vi'; // Default to Vietnamese
+
+    let jacksSets = 3;
+    let jacksReps = 20;
+    let squatsSets = 3;
+    let squatsReps = 12;
+
+    let activeHiitIndex = -1;
+    let hiitSetsCompleted = 0;
+    let hiitQueue = [];
+
+    let currentMode = 'focus'; // 'focus' | 'break' | 'reset'
+    let timerStatus = 'idle'; // 'idle' | 'running' | 'paused'
+    let timeLeft = 0; // in seconds
+    let totalFocusSecondsElapsedThisSession = 0;
+
+    let timerInterval = null;
+    let postureHydrationTimer = null;
+    let wakeLock = null;
+    let boxBreathingTimer = null;
+    let lastTickTime = null;
+
+    // Translations Dictionary
+    const translations = {
+      en: {
+        brand: "Focus Station",
+        focusMode: "Focus Mode",
+        startFocus: "Start Focus",
+        pauseFocus: "Pause Focus",
+        resumeFocus: "Resume Focus",
+        resetMode: "Reset Mode",
+        quickReset: "Quick 2m Reset",
+        timeToMove: "Time to Move!",
+        breakLeft: "Break Time Left: ",
+        back: "Back",
+        next: "Next Stretch",
+        skipBreak: "Skip Break",
+        getReady: "Get Ready",
+        boxBreathing: "Box Breathing: 4s cycles for 2 mins",
+        exitReset: "Exit Reset",
+        dailyStats: "Daily Statistics",
+        focusMins: "Focus Mins",
+        breaks: "Breaks",
+        stretches: "Stretches",
+        weeklyHistory: "Weekly Focus History",
+        chartSubtitle: "Focus duration per day (minutes)",
+        closeStats: "Close Stats",
+        settings: "Settings",
+        durationConfig: "Duration Config",
+        focusPeriod: "Focus Period",
+        focusDesc: "Duration of focus phase in minutes",
+        breakPeriod: "Break Period",
+        breakDesc: "Duration of break phase in minutes",
+        settingLabelLang: "Language / Ngôn ngữ",
+        settingDescLang: "Select interface language",
+        wellnessReminders: "Wellness Reminders",
+        postureAlerts: "Posture & Hydration Alerts",
+        postureAlertsDesc: "Gentle pop-up notifications every 20m",
+        devDebug: "Developer Debug Mode",
+        devDebugDesc: "Speed up timers (1s = 1m) for testing",
+        clearData: "Clear Local Data",
+        saveSettings: "Save Settings",
+        tabFocus: "Focus",
+        tabStats: "Statistics",
+        tabSettings: "Settings",
+        postureTitle: "Posture Check!",
+        postureDesc: "Straighten your back. Drop your shoulders, align your ears over shoulders.",
+        hydrationTitle: "Hydration Check!",
+        hydrationDesc: "Take a sip of water. Keep your body hydrated and mind focused.",
+        sessionCompleteTitle: "Session Complete!",
+        sessionCompleteDesc: "Great job focusing. Time to stand up and stretch!",
+        breakFinishedTitle: "Break Finished!",
+        breakFinishedDesc: "Ready to return to focus? Let's go!",
+        settingsSavedTitle: "Settings Saved",
+        settingsSavedDesc: "Focus settings have been updated.",
+        dataClearedTitle: "Data Cleared",
+        dataClearedDesc: "All settings and history have been reset.",
+        confirmClear: "Are you sure you want to clear all focus statistics and restore default settings?",
+        confirmSkipPhase: "Skip the current phase?",
+        confirmSkipBreak: "Skip the rest of your movement break and return to focus?",
+        confirmResetTimer: "Reset current timer and restore defaults?",
+        resetCompletedTitle: "Reset Completed",
+        resetCompletedDesc: "You should feel more relaxed and focused now.",
+        wakeLockSupported: "Always-On",
+        wakeLockUnsupported: "Unsupported",
+        wakeLockOff: "Lock Off",
+        workoutConfig: "Workout Config",
+        jumpingJacksDesc: "Configure Sets & Reps for Jumping Jacks",
+        squatsDesc: "Configure Sets & Reps for Squats",
+        switchToStretching: "Stretch Mode",
+        randomizeWorkout: "Change Exercise",
+        workoutCompleted: "Workout Completed!",
+        addWorkout: "Add Workout",
+        editWorkout: "Edit Workout",
+        deleteWorkout: "Delete Workout",
+        workoutTitleEn: "Title (English)",
+        workoutTitleVi: "Title (Vietnamese)",
+        workoutGifUrl: "GIF/Image URL or Path",
+        workoutSets: "Sets",
+        workoutReps: "Reps",
+        cancel: "Cancel",
+        save: "Save",
+        confirmDeleteWorkout: "Are you sure you want to delete this workout?",
+        configureSetsReps: "Sets & Reps",
+        scanFolder: "Scan Workouts Folder",
+        scanSelectFolder: "Select the listWorkoutGif folder to import workouts",
+        stretchesData: [
+          { title: "Neck Tilt", desc: "Tilt your head right, drop left shoulder. Hold 15s. Reverse." },
+          { title: "Shoulder Roll", desc: "Roll shoulders backwards in smooth circles. Release tension." },
+          { title: "Wrist Flexor Stretch", desc: "Extend right arm forward, fingers down. Pull gently with left hand. Switch after 15s." },
+          { title: "Chest Opener", desc: "Clasp hands behind back, squeeze shoulder blades together, look up." },
+          { title: "Lower Back Twist", desc: "Sit tall, place right hand on outer left thigh, twist torso left. Switch after 15s." }
+        ],
+        breathingData: ["Inhale", "Hold", "Exhale", "Hold"]
+      },
+      vi: {
+        brand: "Trạm Tập trung",
+        focusMode: "Chế độ Tập trung",
+        startFocus: "Bắt đầu tập trung",
+        pauseFocus: "Tạm dừng",
+        resumeFocus: "Tiếp tục",
+        resetMode: "Đặt lại chế độ",
+        quickReset: "Xả stress 2 phút",
+        timeToMove: "Đến lúc vận động!",
+        breakLeft: "Thời gian nghỉ còn lại: ",
+        back: "Quay lại",
+        next: "Động tác tiếp",
+        skipBreak: "Bỏ qua nghỉ",
+        getReady: "Chuẩn bị",
+        boxBreathing: "Hít thở hộp: chu kỳ 4 giây trong 2 phút",
+        exitReset: "Thoát xả stress",
+        dailyStats: "Thống kê Hàng ngày",
+        focusMins: "Phút học",
+        breaks: "Lượt nghỉ",
+        stretches: "Bài giãn cơ",
+        weeklyHistory: "Lịch sử tập trung tuần",
+        chartSubtitle: "Thời gian tập trung theo ngày (phút)",
+        closeStats: "Đóng thống kê",
+        settings: "Cài đặt",
+        durationConfig: "Cấu hình thời gian",
+        focusPeriod: "Thời gian Tập trung",
+        focusDesc: "Thời lượng của mỗi phiên tập trung (phút)",
+        breakPeriod: "Thời gian Nghỉ",
+        breakDesc: "Thời lượng của mỗi phiên nghỉ ngơi (phút)",
+        settingLabelLang: "Language / Ngôn ngữ",
+        settingDescLang: "Chọn ngôn ngữ hiển thị",
+        wellnessReminders: "Nhắc nhở sức khỏe",
+        postureAlerts: "Cảnh báo tư thế & nước",
+        postureAlertsDesc: "Hiện thông báo nhẹ nhàng mỗi 20 phút",
+        devDebug: "Chế độ lập trình viên",
+        devDebugDesc: "Tăng tốc độ đếm giờ (1 giây = 1 phút) để thử nghiệm",
+        clearData: "Xóa toàn bộ dữ liệu",
+        saveSettings: "Lưu cài đặt",
+        tabFocus: "Tập trung",
+        tabStats: "Thống kê",
+        tabSettings: "Cài đặt",
+        postureTitle: "Chỉnh lại tư thế!",
+        postureDesc: "Hãy thẳng lưng lên. Hạ vai xuống và kéo căng cột sống của bạn.",
+        hydrationTitle: "Uống nước thôi!",
+        hydrationDesc: "Hãy uống một ngụm nước để giữ cho cơ thể tỉnh táo và tập trung.",
+        sessionCompleteTitle: "Đã hoàn thành phiên!",
+        sessionCompleteDesc: "Tuyệt vời lắm! Đã đến lúc đứng dậy và giãn cơ cơ thể rồi.",
+        breakFinishedTitle: "Hết giờ nghỉ ngơi!",
+        breakFinishedDesc: "Bạn đã sẵn sàng quay lại học tập/làm việc chưa? Đi thôi!",
+        settingsSavedTitle: "Đã lưu cài đặt",
+        settingsSavedDesc: "Các thiết lập thời gian đã được cập nhật thành công.",
+        dataClearedTitle: "Đã xóa dữ liệu",
+        dataClearedDesc: "Toàn bộ lịch sử thống kê và cài đặt đã được đặt lại.",
+        confirmClear: "Bạn có chắc chắn muốn xóa toàn bộ thống kê và đặt lại cài đặt mặc định không?",
+        confirmSkipPhase: "Bạn muốn bỏ qua phiên hiện tại?",
+        confirmSkipBreak: "Bỏ qua thời gian nghỉ ngơi còn lại và quay lại tập trung?",
+        confirmResetTimer: "Đặt lại bộ đếm giờ hiện tại về mặc định?",
+        resetCompletedTitle: "Đã thư giãn xong",
+        resetCompletedDesc: "Cơ thể bạn đã được tái tạo năng lượng để tiếp tục làm việc.",
+        wakeLockSupported: "Màn hình bật",
+        wakeLockUnsupported: "Không hỗ trợ giữ màn hình",
+        wakeLockOff: "Màn hình tắt",
+        workoutConfig: "Thiết lập bài tập",
+        jumpingJacksDesc: "Số hiệp & số rep của bài Bật nhảy",
+        squatsDesc: "Số hiệp & số rep của bài Squat",
+        switchToStretching: "Bài giãn cơ",
+        randomizeWorkout: "Đổi bài tập",
+        workoutCompleted: "Đã tập xong!",
+        addWorkout: "Thêm bài tập",
+        editWorkout: "Sửa bài tập",
+        deleteWorkout: "Xóa bài tập",
+        workoutTitleEn: "Tên bài tập (Tiếng Anh)",
+        workoutTitleVi: "Tên bài tập (Tiếng Việt)",
+        workoutGifUrl: "Đường dẫn hoặc URL GIF/Ảnh",
+        workoutSets: "Số hiệp",
+        workoutReps: "Số lần (Reps)",
+        cancel: "Hủy",
+        save: "Lưu",
+        confirmDeleteWorkout: "Bạn có chắc chắn muốn xóa bài tập này không?",
+        configureSetsReps: "Số hiệp & Số rep",
+        scanFolder: "Quét thư mục bài tập",
+        scanSelectFolder: "Chọn thư mục listWorkoutGif để nạp bài tập",
+        breathingData: ["Hít vào", "Giữ thở", "Thở ra", "Giữ thở"]
+      }
+    };
+
+    // HIIT Workouts Configuration
+    const defaultHiitWorkouts = [
+      {
+        id: "jumping_jacks",
+        titleEn: "Jumping Jacks",
+        titleVi: "Bật nhảy Jumping Jacks",
+        gif: "listWorkoutGif/Jumping jacks interval.webp",
+        sets: 3,
+        reps: 20
+      },
+      {
+        id: "squats",
+        titleEn: "Bodyweight Squats",
+        titleVi: "Squat gánh đùi",
+        gif: "listWorkoutGif/Bodyweight Squats.webp",
+        sets: 3,
+        reps: 12
+      }
+    ];
+
+    let hiitWorkouts = JSON.parse(JSON.stringify(defaultHiitWorkouts));
+
+    // Box Breathing Configuration
+    let boxBreathingTimerVal = 4;
+    let boxBreathingPhaseIndex = 0; // 0: Inhale, 1: Hold, 2: Exhale, 3: Hold
+    let boxBreathingCycleCount = 0;
+    const breathingPhases = [
+      { text: "Inhale", color: "var(--accent)", scale: 1.6 },
+      { text: "Hold", color: "var(--status-warning)", scale: 1.6 },
+      { text: "Exhale", color: "var(--accent)", scale: 1.0 },
+      { text: "Hold", color: "var(--status-good)", scale: 1.0 }
+    ];
+
+    // LocalStorage Key & Default Stats
+    const STATS_KEY = "focus_desk_station_stats";
+    let statsData = {};
+
+    // DOM Elements
+    const stationContainer = document.getElementById("stationContainer");
+    const timerDigits = document.getElementById("timerDigits");
+    const timerPhaseLabel = document.getElementById("timerPhaseLabel");
+    const focusProgressBar = document.getElementById("focusProgressBar");
+    const growthSvg = document.getElementById("growthSvg");
+    const growthPath = document.getElementById("growthPath");
+    const wakeLockBadge = document.getElementById("wakeLockBadge");
+    const wakeLockText = document.getElementById("wakeLockText");
+    const btnStartPause = document.getElementById("btnStartPause");
+    const playPauseIcon = document.getElementById("playPauseIcon");
+    const playPauseText = document.getElementById("playPauseText");
+    const btnSkipTimer = document.getElementById("btnSkipTimer");
+    const btnResetTimer = document.getElementById("btnResetTimer");
+    const btnQuickResetTrigger = document.getElementById("btnQuickResetTrigger");
+
+    // Alerts Toast
+    const alertToast = document.getElementById("alertToast");
+    const toastIcon = document.getElementById("toastIcon");
+    const toastTitle = document.getElementById("toastTitle");
+    const toastDesc = document.getElementById("toastDesc");
+    const quickPosture = document.getElementById("quickPosture");
+    const quickHydration = document.getElementById("quickHydration");
+
+    // Views
+    const focusView = document.getElementById("focusView");
+    const breakView = document.getElementById("breakView");
+    const resetView = document.getElementById("resetView");
+    const statsView = document.getElementById("statsView");
+    const settingsView = document.getElementById("settingsView");
+
+    // Navigation
+    const navFocus = document.getElementById("navFocus");
+    const navStats = document.getElementById("navStats");
+    const navSettings = document.getElementById("navSettings");
+    const bottomNav = document.getElementById("bottomNav");
+    const btnStatsShortcut = document.getElementById("btnStatsShortcut");
+
+    // Break View Elements
+    const breakTimeLeftDigits = document.getElementById("breakTimeLeftDigits");
+    const workoutGifDisplay = document.getElementById("workoutGifDisplay");
+    const stretchTitle = document.getElementById("stretchTitle");
+    const stretchDesc = document.getElementById("stretchDesc");
+    const workoutSetsSection = document.getElementById("workoutSetsSection");
+    const workoutSetsTarget = document.getElementById("workoutSetsTarget");
+    const workoutSetsTracker = document.getElementById("workoutSetsTracker");
+    const btnNextStretch = document.getElementById("btnNextStretch");
+    const btnSkipBreak = document.getElementById("btnSkipBreak");
+
+    // Breathing View Elements
+    const breathingInstruction = document.getElementById("breathingInstruction");
+    const breathingCircle = document.getElementById("breathingCircle");
+    const breathingTimer = document.getElementById("breathingTimer");
+    const btnExitBreathing = document.getElementById("btnExitBreathing");
+
+    // Stats View Elements
+    const statFocusTime = document.getElementById("statFocusTime");
+    const statBreaks = document.getElementById("statBreaks");
+    const statStretches = document.getElementById("statStretches");
+    const statsChart = document.getElementById("statsChart");
+    const btnBackFromStats = document.getElementById("btnBackFromStats");
+
+    // Settings View Elements
+    const inputFocusTime = document.getElementById("inputFocusTime");
+    const inputBreakTime = document.getElementById("inputBreakTime");
+    const checkboxAlerts = document.getElementById("checkboxAlerts");
+    const checkboxDebug = document.getElementById("checkboxDebug");
+    const btnSaveSettings = document.getElementById("btnSaveSettings");
+    const btnClearData = document.getElementById("btnClearData");
+
+    // Sprout grow SVG path steps (sprout -> leaves -> flower)
+    const growthStages = [
+      "M12 22v-5M12 17c-2-1-4-1-6 0 2-3 5-3 6 0zm0 0c2-1 4-1 6 0-2-3-5-3-6 0z", // 0-25% sprout
+      "M12 22v-8M12 14c-3-2-5-1-7 1 3-4 6-3 7-1zm0 0c3-2 5-1 7 1-3-4-6-3-7-1z M12 17c-2-1-3 0-4 1 1-2 3-2 4-1z", // 25-50% growing leaves
+      "M12 22V10M12 10c-3-2-6-1-7 2 3-4 6-3 7-2zm0 0c3-2 6-1 7 2-3-4-6-3-7-2zm0 4c-2-1-4-1-5 1 2-3 4-2 5-1zm0 0c2-1 4-1 5 1-2-3-4-2-5-1z", // 50-75% stem and leaves
+      "M12 22V9M12 9c-3-2-5-1-6 2 2-3 5-3 6-2zm0 0c3-2 5-1 6 2-2-3-5-3-6-2zm0 4c-2-1-4-1-5 1 2-3 4-2 5-1zm0 0c2-1 4-1 5 1-2-3-4-2-5-1z M12 9a3 3 0 1 0 0-6 3 3 0 1 0 0 6z" // 75-100% bloom/flower
+    ];
+
+    // Hydration and Posture SVGs for Toasts
+    const postureSVG = `<path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm7 7h-6v11h-2V13H9V9H3V7h16v2z"/>`;
+    const hydrationSVG = `<path d="M12 2S6 10 6 14c0 3.3 2.7 6 6 6s6-2.7 6-6c0-4-6-12-6-12zm0 15.5c-2 0-3.5-1.5-3.5-3.5 0-2.3 2.5-5.6 3.5-6.8 1 1.2 3.5 4.5 3.5 6.8 0 2-1.5 3.5-3.5 3.5z"/>`;
+
+    // ----------------------------------------------------
+    // INITIALIZATION & SETTINGS LOGIC
+    // ----------------------------------------------------
+    function init() {
+      loadSettings();
+      loadStats();
+      resetTimer();
+      setupEventListeners();
+      checkWakeLockSupport();
+      renderStats();
+      updateUIStrings();
+
+      // Auto re-acquire wake lock on visibility change (active tab returns)
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    function loadSettings() {
+      const storedFocus = localStorage.getItem("focusMinutes");
+      const storedBreak = localStorage.getItem("breakMinutes");
+      const storedAlerts = localStorage.getItem("enableAlerts");
+      const storedLang = localStorage.getItem("currentLang");
+
+      if (storedFocus) focusMinutes = parseInt(storedFocus, 10);
+      if (storedBreak) breakMinutes = parseInt(storedBreak, 10);
+      if (storedAlerts !== null) enableAlerts = storedAlerts === "true";
+      if (storedLang) currentLang = storedLang;
+
+      // Load Workouts List (Dynamic)
+      const storedWorkouts = localStorage.getItem("hiitWorkouts");
+      if (storedWorkouts) {
+        try {
+          hiitWorkouts = JSON.parse(storedWorkouts);
+        } catch (e) {
+          hiitWorkouts = [];
+        }
+      }
+
+      // Fallback or merge legacy configurations
+      if (!hiitWorkouts || hiitWorkouts.length === 0) {
+        hiitWorkouts = JSON.parse(JSON.stringify(defaultHiitWorkouts));
+
+        // Backward compatibility: read legacy separate settings
+        const storedJacksSets = localStorage.getItem("jacksSets");
+        const storedJacksReps = localStorage.getItem("jacksReps");
+        const storedSquatsSets = localStorage.getItem("squatsSets");
+        const storedSquatsReps = localStorage.getItem("squatsReps");
+
+        if (storedJacksSets) hiitWorkouts[0].sets = parseInt(storedJacksSets, 10);
+        if (storedJacksReps) hiitWorkouts[0].reps = parseInt(storedJacksReps, 10);
+        if (storedSquatsSets) hiitWorkouts[1].sets = parseInt(storedSquatsSets, 10);
+        if (storedSquatsReps) hiitWorkouts[1].reps = parseInt(storedSquatsReps, 10);
+      }
+
+      // Sync legacy globals
+      const jj = hiitWorkouts.find(w => w.id === "jumping_jacks");
+      if (jj) {
+        jacksSets = jj.sets || 3;
+        jacksReps = jj.reps || 20;
+      }
+      const sq = hiitWorkouts.find(w => w.id === "squats");
+      if (sq) {
+        squatsSets = sq.sets || 3;
+        squatsReps = sq.reps || 12;
+      }
+
+      // Update Settings Form UI
+      inputFocusTime.value = focusMinutes;
+      breakMinutes = Math.max(1, breakMinutes);
+      inputBreakTime.value = breakMinutes;
+      checkboxAlerts.checked = enableAlerts;
+      document.getElementById("selectLang").value = currentLang;
+
+      // Render the dynamic settings list of workouts
+      if (typeof renderWorkoutsSettingsList === "function") {
+        renderWorkoutsSettingsList();
+      }
+    }
+
+    function saveSettings() {
+      focusMinutes = Math.max(5, Math.min(180, parseInt(inputFocusTime.value, 10) || 45));
+      breakMinutes = Math.max(1, Math.min(60, parseInt(inputBreakTime.value, 10) || 15));
+      enableAlerts = checkboxAlerts.checked;
+      isDebugMode = checkboxDebug.checked;
+      currentLang = document.getElementById("selectLang").value;
+
+      // Update dynamic workouts from sets/reps inputs
+      document.querySelectorAll(".workout-sets-input").forEach(input => {
+        const id = input.getAttribute("data-id");
+        const workout = hiitWorkouts.find(w => w.id === id);
+        if (workout) {
+          workout.sets = Math.max(1, Math.min(10, parseInt(input.value, 10) || 3));
+        }
+      });
+      document.querySelectorAll(".workout-reps-input").forEach(input => {
+        const id = input.getAttribute("data-id");
+        const workout = hiitWorkouts.find(w => w.id === id);
+        if (workout) {
+          workout.reps = Math.max(1, Math.min(100, parseInt(input.value, 10) || 10));
+        }
+      });
+
+      localStorage.setItem("focusMinutes", focusMinutes);
+      localStorage.setItem("breakMinutes", breakMinutes);
+      localStorage.setItem("enableAlerts", enableAlerts);
+      localStorage.setItem("currentLang", currentLang);
+
+      // Serialize dynamic workouts
+      localStorage.setItem("hiitWorkouts", JSON.stringify(hiitWorkouts));
+
+      // Sync and save legacy settings to maintain compatibility
+      const jj = hiitWorkouts.find(w => w.id === "jumping_jacks");
+      if (jj) {
+        jacksSets = jj.sets;
+        jacksReps = jj.reps;
+        localStorage.setItem("jacksSets", jacksSets);
+        localStorage.setItem("jacksReps", jacksReps);
+      }
+      const sq = hiitWorkouts.find(w => w.id === "squats");
+      if (sq) {
+        squatsSets = sq.sets;
+        squatsReps = sq.reps;
+        localStorage.setItem("squatsSets", squatsSets);
+        localStorage.setItem("squatsReps", squatsReps);
+      }
+
+      updateUIStrings();
+      const t = translations[currentLang];
+      showToast(t.settingsSavedTitle, t.settingsSavedDesc, false, "good");
+      currentMode = 'focus';
+      resetTimer();
+      switchView('focus');
+    }
+
+    // ----------------------------------------------------
+    // LOCAL STORAGE STATS LOGIC
+    // ----------------------------------------------------
+    function getTodayString() {
+      // Return YYYY-MM-DD in local time
+      const d = new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function loadStats() {
+      const raw = localStorage.getItem(STATS_KEY);
+      if (raw) {
+        try {
+          statsData = JSON.parse(raw);
+        } catch (e) {
+          statsData = {};
+        }
+      }
+
+      // Ensure today's entry exists
+      const today = getTodayString();
+      if (!statsData[today]) {
+        statsData[today] = { focusMinutes: 0, breaksCompleted: 0, stretchesCompleted: 0 };
+      }
+    }
+
+    function saveStats() {
+      localStorage.setItem(STATS_KEY, JSON.stringify(statsData));
+      renderStats();
+    }
+
+    function recordFocusMinutes(minutes) {
+      const today = getTodayString();
+      loadStats();
+      statsData[today].focusMinutes += minutes;
+      saveStats();
+    }
+
+    function recordBreakCompleted() {
+      const today = getTodayString();
+      loadStats();
+      statsData[today].breaksCompleted += 1;
+      saveStats();
+    }
+
+    function recordStretchCompleted() {
+      const today = getTodayString();
+      loadStats();
+      statsData[today].stretchesCompleted += 1;
+      saveStats();
+    }
+
+    function clearLocalData() {
+      const t = translations[currentLang];
+      if (confirm(t.confirmClear)) {
+        localStorage.clear();
+        statsData = {};
+        hiitQueue = []; // Reset queue on clear
+        loadSettings();
+        loadStats();
+        currentMode = 'focus';
+        resetTimer();
+        renderStats();
+        showToast(t.dataClearedTitle, t.dataClearedDesc, true);
+        switchView('focus');
+      }
+    }
+
+    // ----------------------------------------------------
+    // WAKE LOCK LOGIC
+    // ----------------------------------------------------
+    function checkWakeLockSupport() {
+      const t = translations[currentLang];
+      if ('wakeLock' in navigator) {
+        updateWakeLockBadge(false, t.wakeLockOff);
+      } else {
+        updateWakeLockBadge(false, t.wakeLockUnsupported);
+        wakeLockBadge.style.opacity = "0.5";
+      }
+    }
+
+    async function requestWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      const t = translations[currentLang];
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        updateWakeLockBadge(true, t.wakeLockSupported);
+
+        wakeLock.addEventListener('release', () => {
+          updateWakeLockBadge(false, t.wakeLockOff);
+        });
+      } catch (err) {
+        console.error(`Wake Lock request failed: ${err.name}, ${err.message}`);
+        updateWakeLockBadge(false, t.wakeLockUnsupported);
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock !== null) {
+        wakeLock.release();
+        wakeLock = null;
+      }
+    }
+
+    function updateWakeLockBadge(active, text) {
+      if (active) {
+        wakeLockBadge.classList.add("locked");
+        wakeLockText.innerText = text;
+      } else {
+        wakeLockBadge.classList.remove("locked");
+        wakeLockText.innerText = text;
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    }
+
+    // ----------------------------------------------------
+    // TRANSLATIONS ENGINE
+    // ----------------------------------------------------
+    function updateUIStrings() {
+      const lang = currentLang;
+      const t = translations[lang];
+
+      // Update elements with data-t attribute
+      document.querySelectorAll("[data-t]").forEach(el => {
+        const key = el.getAttribute("data-t");
+        if (t[key]) {
+          // If the element has children (like SVG), we should preserve the SVG and only update text
+          const svg = el.querySelector("svg");
+          if (svg) {
+            // Keep SVG intact, replace text nodes
+            const svgClone = svg.cloneNode(true);
+            el.innerHTML = "";
+            el.appendChild(svgClone);
+            el.appendChild(document.createTextNode(" " + t[key]));
+          } else {
+            el.textContent = t[key];
+          }
+        }
+      });
+
+      // Update dynamic elements
+      if (currentMode === 'focus') {
+        timerPhaseLabel.innerText = t.focusMode;
+      }
+
+      if (timerStatus === 'running') {
+        playPauseText.innerText = t.pauseFocus;
+      } else {
+        playPauseText.innerText = (timerStatus === 'paused') ? t.resumeFocus : t.startFocus;
+      }
+
+      if (currentMode === 'break') {
+        if (activeHiitIndex >= 0 && activeHiitIndex < hiitWorkouts.length) {
+          loadHiitWorkout(activeHiitIndex);
+        }
+        document.getElementById("lblBreakLeft").innerText = t.breakLeft;
+      }
+
+      // Re-render the workouts settings list if the function is defined
+      if (typeof renderWorkoutsSettingsList === 'function') {
+        renderWorkoutsSettingsList();
+      }
+    }
+
+    function switchToActiveTimerView() {
+      switchView(currentMode);
+    }
+
+    // ----------------------------------------------------
+    // VIEW CONTROLLER
+    // ----------------------------------------------------
+    function switchView(viewName) {
+      focusView.classList.add("hidden");
+      breakView.classList.add("hidden");
+      resetView.classList.add("hidden");
+      statsView.classList.add("hidden");
+      settingsView.classList.add("hidden");
+
+      navFocus.classList.remove("active");
+      navStats.classList.remove("active");
+      navSettings.classList.remove("active");
+
+      // Reset view status transitions
+      if (viewName === 'focus') {
+        focusView.classList.remove("hidden");
+        navFocus.classList.add("active");
+        stationContainer.classList.remove("break-mode-active");
+        currentMode = 'focus';
+      } else if (viewName === 'break') {
+        breakView.classList.remove("hidden");
+        stationContainer.classList.add("break-mode-active");
+        currentMode = 'break';
+        // When going into break, release wake lock to conserve battery, or keep active?
+        // Since desk phone setup is always connected, let's keep wake lock active, but let's lock again just in case
+        requestWakeLock();
+      } else if (viewName === 'reset') {
+        resetView.classList.remove("hidden");
+        if (currentMode !== 'reset') {
+          currentMode = 'reset';
+          startBoxBreathing();
+        }
+      } else if (viewName === 'stats') {
+        statsView.classList.remove("hidden");
+        navStats.classList.add("active");
+        renderStats();
+      } else if (viewName === 'settings') {
+        settingsView.classList.remove("hidden");
+        navSettings.classList.add("active");
+      }
+
+      updateUIStrings();
+    }
+
+    // ----------------------------------------------------
+    // TIMING ENGINE (FOCUS & BREAK TIMER)
+    // ----------------------------------------------------
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerStatus = 'idle';
+      const t = translations[currentLang];
+
+      if (currentMode === 'focus') {
+        timeLeft = focusMinutes * 60;
+        updateTimerDisplay();
+        updateProgressBar(1);
+
+        btnStartPause.classList.remove("btn-secondary");
+        btnStartPause.classList.add("btn-primary");
+        playPauseIcon.innerHTML = `<path d="M8 5v14l11-7z"/>`;
+        playPauseText.innerText = t.startFocus;
+        brandTitle.innerText = t.brand;
+
+        // Sprout reset
+        setSproutStage(0);
+
+        totalFocusSecondsElapsedThisSession = 0;
+      } else {
+        // break mode
+        timeLeft = breakMinutes * 60;
+        updateTimerDisplay();
+        initHiitSequence();
+      }
+    }
+
+    function toggleTimer() {
+      const t = translations[currentLang];
+      if (timerStatus === 'idle' || timerStatus === 'paused') {
+        // Start or Resume
+        timerStatus = 'running';
+        btnStartPause.classList.remove("btn-primary");
+        btnStartPause.classList.add("btn-secondary");
+        playPauseIcon.innerHTML = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`;
+        playPauseText.innerText = t.pauseFocus;
+
+        // Request wake lock when session begins
+        requestWakeLock();
+
+        // Track time delta to prevent background throttling drift
+        lastTickTime = Date.now();
+
+        // Set up tick interval
+        const tickRate = isDebugMode ? 16.67 : 1000; // ~60x speed in debug
+        timerInterval = setInterval(timerTick, tickRate);
+      } else {
+        // Pause
+        timerStatus = 'paused';
+        btnStartPause.classList.remove("btn-secondary");
+        btnStartPause.classList.add("btn-primary");
+        playPauseIcon.innerHTML = `<path d="M8 5v14l11-7z"/>`;
+        playPauseText.innerText = t.resumeFocus;
+
+        clearInterval(timerInterval);
+        timerInterval = null;
+
+        // Release wake lock temporarily on pause
+        releaseWakeLock();
+      }
+    }
+
+    function timerTick() {
+      const now = Date.now();
+      const deltaMs = now - lastTickTime;
+      lastTickTime = now;
+
+      // In debug mode, time runs 60 times faster (1s real time = 60s timer time)
+      const deltaSec = isDebugMode ? (deltaMs / 1000) * 60 : (deltaMs / 1000);
+
+      if (timeLeft > 0) {
+        timeLeft = Math.max(0, timeLeft - deltaSec);
+        if (currentMode === 'focus') {
+          totalFocusSecondsElapsedThisSession += deltaSec;
+
+          // Hydration & Posture reminder every 20 minutes (1200 seconds)
+          const prevReminderCount = Math.floor((totalFocusSecondsElapsedThisSession - deltaSec) / 1200);
+          const currReminderCount = Math.floor(totalFocusSecondsElapsedThisSession / 1200);
+          if (enableAlerts && currReminderCount > prevReminderCount && currReminderCount > 0) {
+            triggerPostureHydrationAlert();
+          }
+        }
+
+        updateTimerDisplay();
+
+        if (currentMode === 'focus') {
+          // Progress bar countdown
+          const totalDuration = focusMinutes * 60;
+          const ratio = timeLeft / totalDuration;
+          updateProgressBar(ratio);
+
+          // Grow sprout
+          const percentDone = (1 - ratio) * 100;
+          setSproutStage(percentDone);
+        }
+      } else {
+        // Timer reached zero!
+        handlePhaseComplete();
+      }
+    }
+
+    function updateTimerDisplay() {
+      const displaySeconds = Math.round(timeLeft);
+      const minutes = Math.floor(displaySeconds / 60);
+      const seconds = displaySeconds % 60;
+      const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+      if (currentMode === 'focus') {
+        timerDigits.innerText = formatted;
+      } else if (currentMode === 'break') {
+        breakTimeLeftDigits.innerText = formatted;
+      }
+    }
+
+    function updateProgressBar(ratio) {
+      const circleCircumference = 754; // 2 * PI * r (r=120)
+      const offset = circleCircumference * ratio;
+      focusProgressBar.style.strokeDashoffset = offset;
+    }
+
+    function setSproutStage(percentDone) {
+      let stageIndex = 0;
+      let opacity = 0.15;
+      let scale = 1.0;
+
+      if (percentDone >= 75) {
+        stageIndex = 3;
+        opacity = 0.9;
+        scale = 1.35;
+      } else if (percentDone >= 50) {
+        stageIndex = 2;
+        opacity = 0.7;
+        scale = 1.2;
+      } else if (percentDone >= 25) {
+        stageIndex = 1;
+        opacity = 0.4;
+        scale = 1.1;
+      }
+
+      growthPath.setAttribute("d", growthStages[stageIndex]);
+      growthSvg.style.opacity = opacity;
+      growthSvg.style.transform = `scale(${scale})`;
+    }
+
+    function handlePhaseComplete() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      const t = translations[currentLang];
+
+      // Sound alert (visual warning only as selected by user, but let's flash screen as cue)
+      flashScreen();
+
+      if (currentMode === 'focus') {
+        // Record focus progress (min 1, rounded)
+        const earnedMinutes = Math.round(totalFocusSecondsElapsedThisSession / 60);
+        if (earnedMinutes > 0) {
+          recordFocusMinutes(earnedMinutes);
+        }
+
+        showToast(t.sessionCompleteTitle, t.sessionCompleteDesc, false, "good");
+
+        // Auto transition to Break mode
+        currentMode = 'break';
+        switchView('break');
+        resetTimer();
+
+        // Start break timer immediately
+        timerStatus = 'running';
+        lastTickTime = Date.now();
+        const tickRate = isDebugMode ? 16.67 : 1000;
+        timerInterval = setInterval(timerTick, tickRate);
+      } else {
+        // Break finished
+        recordBreakCompleted();
+        showToast(t.breakFinishedTitle, t.breakFinishedDesc, false, "accent");
+
+        currentMode = 'focus';
+        switchView('focus');
+        resetTimer();
+      }
+    }
+
+    function skipTimer() {
+      const t = translations[currentLang];
+      if (confirm(t.confirmSkipPhase)) {
+        if (currentMode === 'focus') {
+          // Record what was completed so far
+          const earnedMinutes = Math.round(totalFocusSecondsElapsedThisSession / 60);
+          if (earnedMinutes > 0) {
+            recordFocusMinutes(earnedMinutes);
+          }
+
+          currentMode = 'break';
+          switchView('break');
+          resetTimer();
+
+          // Auto start break
+          timerStatus = 'running';
+          lastTickTime = Date.now();
+          const tickRate = isDebugMode ? 16.67 : 1000;
+          timerInterval = setInterval(timerTick, tickRate);
+        } else {
+          // Skip break
+          currentMode = 'focus';
+          switchView('focus');
+          resetTimer();
+        }
+      }
+    }
+
+    function flashScreen() {
+      let flashes = 4;
+      const flashColor = currentMode === 'focus' ? 'rgba(217, 89, 38, 0.4)' : 'rgba(57, 135, 229, 0.4)';
+
+      const interval = setInterval(() => {
+        stationContainer.style.boxShadow = `inset 0 0 40px ${flashColor}`;
+        setTimeout(() => {
+          stationContainer.style.boxShadow = 'none';
+        }, 300);
+
+        flashes--;
+        if (flashes <= 0) clearInterval(interval);
+      }, 600);
+    }
+
+    // ----------------------------------------------------
+    // WELLNESS ALERTS (POSTURE & HYDRATION CHECK)
+    // ----------------------------------------------------
+    function triggerPostureHydrationAlert() {
+      // Pick randomly posture or hydration check
+      const isPosture = Math.random() > 0.5;
+
+      if (isPosture) {
+        showPostureAlert();
+        quickPosture.classList.add("active");
+        setTimeout(() => quickPosture.classList.remove("active"), 15000);
+      } else {
+        showHydrationAlert();
+        quickHydration.classList.add("active");
+        setTimeout(() => quickHydration.classList.remove("active"), 15000);
+      }
+
+      // Gentle screen frame border highlight
+      stationContainer.style.border = "2px solid var(--status-warning)";
+      setTimeout(() => {
+        stationContainer.style.border = currentMode === 'break' ? "1px solid rgba(217, 89, 38, 0.2)" : "1px solid var(--border-color)";
+      }, 15000);
+    }
+
+    function showPostureAlert() {
+      const t = translations[currentLang];
+      toastIconContainer.style.backgroundColor = "rgba(250, 178, 25, 0.1)";
+      toastIcon.innerHTML = postureSVG;
+      toastIcon.style.fill = "var(--status-warning)";
+      alertToast.style.borderColor = "var(--status-warning)";
+      toastTitle.innerText = t.postureTitle;
+      toastTitle.style.color = "var(--status-warning)";
+      toastDesc.innerText = t.postureDesc;
+
+      alertToast.classList.add("visible");
+      setTimeout(() => {
+        alertToast.classList.remove("visible");
+      }, 15000);
+    }
+
+    function showHydrationAlert() {
+      const t = translations[currentLang];
+      toastIconContainer.style.backgroundColor = "rgba(57, 135, 229, 0.1)";
+      toastIcon.innerHTML = hydrationSVG;
+      toastIcon.style.fill = "var(--accent)";
+      alertToast.style.borderColor = "var(--accent)";
+      toastTitle.innerText = t.hydrationTitle;
+      toastTitle.style.color = "var(--accent)";
+      toastDesc.innerText = t.hydrationDesc;
+
+      alertToast.classList.add("visible");
+      setTimeout(() => {
+        alertToast.classList.remove("visible");
+      }, 15000);
+    }
+
+    function showToast(title, desc, permanent = false, statusType = "warning") {
+      let color = "var(--status-warning)";
+      let bg = "rgba(250, 178, 25, 0.1)";
+
+      if (statusType === "good") {
+        color = "var(--status-good)";
+        bg = "rgba(12, 163, 12, 0.1)";
+      } else if (statusType === "accent") {
+        color = "var(--accent)";
+        bg = "rgba(57, 135, 229, 0.1)";
+      } else if (statusType === "critical") {
+        color = "var(--status-critical)";
+        bg = "rgba(208, 59, 59, 0.1)";
+      }
+
+      toastIconContainer.style.backgroundColor = bg;
+      toastIcon.innerHTML = `<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>`;
+      toastIcon.style.fill = color;
+
+      alertToast.style.borderColor = color;
+      toastTitle.innerText = title;
+      toastTitle.style.color = color;
+      toastDesc.innerText = desc;
+
+      alertToast.classList.add("visible");
+      if (!permanent) {
+        setTimeout(() => {
+          alertToast.classList.remove("visible");
+        }, 6000);
+      }
+    }
+
+    // ----------------------------------------------------
+    // STRETCHING SEQUENCE ENGINE
+    // ----------------------------------------------------
+    // ----------------------------------------------------
+    // HIIT WORKOUT ENGINE
+    // ----------------------------------------------------
+    function initHiitSequence() {
+      if (hiitWorkouts.length > 0) {
+        if (!hiitQueue || hiitQueue.length === 0) {
+          // Fill queue with all indices shuffled
+          hiitQueue = Array.from({ length: hiitWorkouts.length }, (_, i) => i);
+          // Fisher-Yates shuffle
+          for (let i = hiitQueue.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [hiitQueue[i], hiitQueue[j]] = [hiitQueue[j], hiitQueue[i]];
+          }
+          // Avoid consecutive duplicates across cycle boundaries
+          if (hiitWorkouts.length > 1 && hiitQueue[0] === activeHiitIndex) {
+            [hiitQueue[0], hiitQueue[1]] = [hiitQueue[1], hiitQueue[0]];
+          }
+        }
+        // Shift the next index from queue
+        activeHiitIndex = hiitQueue.shift();
+      } else {
+        activeHiitIndex = -1;
+      }
+      hiitSetsCompleted = 0;
+      if (activeHiitIndex >= 0 && activeHiitIndex < hiitWorkouts.length) {
+        loadHiitWorkout(activeHiitIndex);
+      }
+    }
+
+    function loadHiitWorkout(index) {
+      const workout = hiitWorkouts[index];
+      const t = translations[currentLang];
+
+      workoutGifDisplay.src = workout.gif;
+
+      const title = currentLang === 'vi' ? workout.titleVi : workout.titleEn;
+      stretchTitle.innerText = title;
+
+      const setsCount = workout.sets || 3;
+      const repsCount = workout.reps || 10;
+
+      stretchDesc.innerText = currentLang === 'vi'
+        ? `Tập luyện HIIT để vận động cơ thể.`
+        : `HIIT workout session to stay active.`;
+
+      renderSetsTracker(setsCount, repsCount);
+
+      // Update change button text
+      btnNextStretch.innerText = t.randomizeWorkout;
+    }
+
+    function renderSetsTracker(setsCount, repsCount) {
+      const tracker = document.getElementById("workoutSetsTracker");
+      tracker.innerHTML = "";
+
+      const targetDiv = document.getElementById("workoutSetsTarget");
+      const t = translations[currentLang];
+      targetDiv.innerText = currentLang === 'vi'
+        ? `${setsCount} Hiệp x ${repsCount} Lần`
+        : `${setsCount} Sets x ${repsCount} Reps`;
+
+      for (let i = 1; i <= setsCount; i++) {
+        const btn = document.createElement("button");
+        btn.className = "btn btn-icon";
+        btn.style.width = "40px";
+        btn.style.height = "40px";
+        btn.style.fontSize = "0.9rem";
+        btn.style.margin = "0 4px";
+        btn.innerText = i;
+        btn.style.backgroundColor = i <= hiitSetsCompleted ? "var(--break-accent)" : "rgba(255,255,255,0.05)";
+        btn.style.color = i <= hiitSetsCompleted ? "#ffffff" : "var(--text-secondary)";
+        btn.style.borderColor = i <= hiitSetsCompleted ? "var(--break-accent)" : "var(--border-color)";
+
+        btn.addEventListener("click", () => {
+          if (i <= hiitSetsCompleted) {
+            // Undo up to this set
+            hiitSetsCompleted = i - 1;
+          } else {
+            // Complete up to this set
+            hiitSetsCompleted = i;
+            recordStretchCompleted(); // Increment stretches completed count
+          }
+
+          // Re-render tracker
+          renderSetsTracker(setsCount, repsCount);
+
+          if (hiitSetsCompleted === setsCount) {
+            showToast(t.workoutCompleted, "🎉 Keep it up!", false, "good");
+          }
+        });
+
+        tracker.appendChild(btn);
+      }
+    }
+
+    // ----------------------------------------------------
+    // QUICK RESET (BOX BREATHING) ENGINE
+    // ----------------------------------------------------
+    function startBoxBreathing() {
+      // 2-minute session = 120 seconds.
+      boxBreathingTimerVal = 4;
+      boxBreathingPhaseIndex = 0;
+      boxBreathingCycleCount = 0;
+
+      updateBreathingUI();
+
+      if (timerStatus === 'running') {
+        timerStatus = 'paused';
+        btnStartPause.classList.remove("btn-secondary");
+        btnStartPause.classList.add("btn-primary");
+        playPauseIcon.innerHTML = `<path d="M8 5v14l11-7z"/>`;
+        clearInterval(timerInterval);
+        timerInterval = null;
+        releaseWakeLock();
+      } else {
+        clearInterval(timerInterval); // Make sure regular focus clock is suspended
+      }
+
+      const tickRate = isDebugMode ? 16.67 : 1000;
+      boxBreathingTimer = setInterval(tickBoxBreathing, tickRate);
+    }
+
+    function tickBoxBreathing() {
+      boxBreathingTimerVal--;
+      if (boxBreathingTimerVal <= 0) {
+        // Transition to next breathing phase
+        boxBreathingPhaseIndex = (boxBreathingPhaseIndex + 1) % 4;
+        boxBreathingTimerVal = 4; // 4 seconds per phase
+
+        if (boxBreathingPhaseIndex === 0) {
+          boxBreathingCycleCount++;
+        }
+
+        // Check if 2 minutes is up (120 seconds / 16 seconds per full cycle = 7.5 cycles)
+        if (boxBreathingCycleCount >= 8) {
+          endBoxBreathing(true);
+          return;
+        }
+      }
+      updateBreathingUI();
+    }
+
+    function updateBreathingUI() {
+      const phase = breathingPhases[boxBreathingPhaseIndex];
+      const t = translations[currentLang];
+      breathingInstruction.innerText = t.breathingData[boxBreathingPhaseIndex];
+      breathingInstruction.style.color = phase.color;
+      breathingTimer.innerText = boxBreathingTimerVal;
+
+      // Scaling animate the inner circle
+      let scale = phase.scale;
+      if (boxBreathingPhaseIndex === 0) {
+        // Inhaling: grow from 1.0 to 1.6
+        const progressRatio = (4 - boxBreathingTimerVal) / 4;
+        scale = 1.0 + (0.6 * progressRatio);
+      } else if (boxBreathingPhaseIndex === 2) {
+        // Exhaling: shrink from 1.6 to 1.0
+        const progressRatio = (4 - boxBreathingTimerVal) / 4;
+        scale = 1.6 - (0.6 * progressRatio);
+      }
+
+      breathingCircle.style.transform = `scale(${scale})`;
+      breathingCircle.style.backgroundColor = phase.color;
+    }
+
+    function endBoxBreathing(completed = false) {
+      clearInterval(boxBreathingTimer);
+      boxBreathingTimer = null;
+      const t = translations[currentLang];
+
+      if (completed) {
+        showToast(t.resetCompletedTitle, t.resetCompletedDesc, false, "good");
+      }
+
+      switchView('focus');
+    }
+
+    // ----------------------------------------------------
+    // STATS VIEW & SVG CHART RENDERING (DATAVIZ COMPLIANCE)
+    // ----------------------------------------------------
+    function renderStats() {
+      loadStats();
+
+      // Sum up totals
+      let totalFocus = 0;
+      let totalBreaks = 0;
+      let totalStretches = 0;
+
+      Object.values(statsData).forEach(day => {
+        totalFocus += day.focusMinutes || 0;
+        totalBreaks += day.breaksCompleted || 0;
+        totalStretches += day.stretchesCompleted || 0;
+      });
+
+      statFocusTime.innerText = totalFocus;
+      statBreaks.innerText = totalBreaks;
+      statStretches.innerText = totalStretches;
+
+      // Generate SVG Chart Data
+      // Get last 7 days keys
+      const daysToRender = [];
+      const d = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const temp = new Date(d);
+        temp.setDate(d.getDate() - i);
+        const year = temp.getFullYear();
+        const month = String(temp.getMonth() + 1).padStart(2, '0');
+        const day = String(temp.getDate()).padStart(2, '0');
+        daysToRender.push(`${year}-${month}-${day}`);
+      }
+
+      // Chart configuration (strictly matching dataviz rules)
+      const chartWidth = 340;
+      const chartHeight = 180;
+      const paddingLeft = 35;
+      const paddingRight = 10;
+      const paddingTop = 20;
+      const paddingBottom = 25;
+
+      const graphWidth = chartWidth - paddingLeft - paddingRight;
+      const graphHeight = chartHeight - paddingTop - paddingBottom;
+
+      // Find max focus value to scale Y axis
+      let maxFocusVal = 60; // minimum ceiling scale of 60m
+      daysToRender.forEach(dayKey => {
+        const mins = (statsData[dayKey] && statsData[dayKey].focusMinutes) || 0;
+        if (mins > maxFocusVal) maxFocusVal = mins;
+      });
+      // Round maxFocusVal to nearest 15 for nicer grid lines
+      maxFocusVal = Math.ceil(maxFocusVal / 15) * 15;
+
+      // Start generating SVG content
+      let svgHtml = "";
+
+      // Grid lines & Y-axis labels (muted secondary ink, absolute layout, tabular-nums)
+      const yTicks = 4; // 0, 1/3, 2/3, max
+      for (let i = 0; i <= yTicks; i++) {
+        const ratio = i / yTicks;
+        const yVal = Math.round(ratio * maxFocusVal);
+        const yPos = chartHeight - paddingBottom - (ratio * graphHeight);
+
+        // Gridline (recessive hairline)
+        svgHtml += `<line x1="${paddingLeft}" y1="${yPos}" x2="${chartWidth - paddingRight}" y2="${yPos}" stroke="#2c2c2a" stroke-width="1" />`;
+        // Axis tick labels (tabular figures, muted)
+        svgHtml += `<text x="${paddingLeft - 8}" y="${yPos + 4}" fill="#898781" font-size="9" text-anchor="end" font-family="system-ui" style="font-variant-numeric: tabular-nums;">${yVal}</text>`;
+      }
+
+      // X-Axis Baseline
+      const baselineY = chartHeight - paddingBottom;
+      svgHtml += `<line x1="${paddingLeft}" y1="${baselineY}" x2="${chartWidth - paddingRight}" y2="${baselineY}" stroke="#383835" stroke-width="1.5" />`;
+
+      // Render Bars (2px gaps between overlapping fills, direct label space, single blue series #3987e5)
+      const barCount = daysToRender.length;
+      const totalSpacing = 6; // 6 gaps of 8px
+      const rawBarWidth = (graphWidth - (totalSpacing * 8)) / barCount;
+      const barWidth = Math.floor(rawBarWidth);
+
+      daysToRender.forEach((dayKey, idx) => {
+        const mins = (statsData[dayKey] && statsData[dayKey].focusMinutes) || 0;
+        let barHeight = (mins / maxFocusVal) * graphHeight;
+        if (mins > 0 && barHeight < 4) {
+          barHeight = 4; // Clamp minimum height to 4px for tiny values to render rounded top properly
+        }
+
+        const xPos = paddingLeft + (idx * (barWidth + 8));
+        const yPos = baselineY - barHeight;
+
+        // Render bar if height > 0 (rounded tops, filled in categorical blue #3987e5)
+        if (barHeight > 0) {
+          svgHtml += `<path d="M ${xPos} ${yPos + 4}
+                             Q ${xPos} ${yPos} ${xPos + 4} ${yPos}
+                             L ${xPos + barWidth - 4} ${yPos}
+                             Q ${xPos + barWidth} ${yPos} ${xPos + barWidth} ${yPos + 4}
+                             L ${xPos + barWidth} ${baselineY}
+                             L ${xPos} ${baselineY} Z"
+                             fill="#3987e5" />`;
+
+          // Direct label helper: show duration on hover/focus (fallback visible)
+          // Simple direct label value overlay if there is vertical space
+          if (barHeight > 15) {
+            svgHtml += `<text x="${xPos + (barWidth / 2)}" y="${yPos - 4}" fill="#ffffff" font-size="8" font-weight="600" text-anchor="middle">${mins}</text>`;
+          }
+        }
+
+        // X-axis label (date: e.g. "29 Jul" or "Wed")
+        const dateObj = new Date(dayKey);
+        const dayLabel = dateObj.toLocaleDateString('en-US', { weekday: 'narrow' }); // 'M', 'T', 'W', etc.
+        svgHtml += `<text x="${xPos + (barWidth / 2)}" y="${baselineY + 16}" fill="#898781" font-size="9" text-anchor="middle">${dayLabel}</text>`;
+      });
+
+      statsChart.innerHTML = svgHtml;
+    }
+
+    function renderWorkoutsSettingsList() {
+      const container = document.getElementById("workoutsSettingsList");
+      if (!container) return;
+      container.innerHTML = "";
+      const lang = currentLang;
+      const t = translations[lang];
+
+      hiitWorkouts.forEach(workout => {
+        const title = lang === 'vi' ? workout.titleVi : workout.titleEn;
+
+        const item = document.createElement("div");
+        item.className = "setting-item";
+        item.style.flexDirection = "column";
+        item.style.alignItems = "stretch";
+        item.style.gap = "12px";
+        item.style.marginBottom = "12px";
+
+        item.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <div class="setting-info" style="max-width: 70%;">
+              <span class="setting-label" style="font-size: 0.95rem; font-weight: 600;">${title}</span>
+              <span class="setting-desc" style="word-break: break-all; font-size: 0.75rem; color: var(--text-secondary);">${workout.gif}</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-icon btn-secondary btn-edit-workout" data-id="${workout.id}" style="width: 36px; height: 36px;" title="${t.editWorkout || 'Edit'}">
+                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              </button>
+              <button type="button" class="btn btn-icon btn-secondary btn-delete-workout" data-id="${workout.id}" style="width: 36px; height: 36px; border-color: var(--status-critical); color: var(--status-critical);" title="${t.deleteWorkout || 'Delete'}">
+                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; width: 100%;">
+            <span class="setting-desc" style="font-size: 0.8rem; color: var(--text-secondary);">${t.configureSetsReps || 'Sets & Reps'}</span>
+            <div class="setting-control" style="display: flex; gap: 8px; align-items: center;">
+              <input type="number" class="workout-sets-input" data-id="${workout.id}" min="1" max="10" value="${workout.sets || 3}" style="width: 60px; background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 8px; border-radius: 8px; font-family: var(--font-family); font-weight: 600; text-align: center;">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">x</span>
+              <input type="number" class="workout-reps-input" data-id="${workout.id}" min="1" max="100" value="${workout.reps || 10}" style="width: 70px; background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 8px; border-radius: 8px; font-family: var(--font-family); font-weight: 600; text-align: center;">
+            </div>
+          </div>
+        `;
+
+        container.appendChild(item);
+      });
+
+      // Add event listeners to dynamic edit/delete buttons
+      container.querySelectorAll(".btn-edit-workout").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const id = btn.getAttribute("data-id");
+          openWorkoutDialog(id);
+        });
+      });
+
+      container.querySelectorAll(".btn-delete-workout").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const id = btn.getAttribute("data-id");
+          deleteWorkout(id);
+        });
+      });
+    }
+
+    function openWorkoutDialog(id = null) {
+      const t = translations[currentLang];
+      const workoutDialog = document.getElementById("workoutDialog");
+      const editWorkoutId = document.getElementById("editWorkoutId");
+      const workoutTitleEn = document.getElementById("workoutTitleEn");
+      const workoutTitleVi = document.getElementById("workoutTitleVi");
+      const workoutGifUrl = document.getElementById("workoutGifUrl");
+      const workoutSets = document.getElementById("workoutSets");
+      const workoutReps = document.getElementById("workoutReps");
+      const dialogTitle = document.getElementById("dialogTitle");
+
+      if (id) {
+        const workout = hiitWorkouts.find(w => w.id === id);
+        if (workout) {
+          dialogTitle.innerText = t.editWorkout || "Edit Workout";
+          editWorkoutId.value = workout.id;
+          workoutTitleEn.value = workout.titleEn;
+          workoutTitleVi.value = workout.titleVi;
+          workoutGifUrl.value = workout.gif;
+          workoutSets.value = workout.sets || 3;
+          workoutReps.value = workout.reps || 10;
+        }
+      } else {
+        dialogTitle.innerText = t.addWorkout || "Add Workout";
+        editWorkoutId.value = "";
+        workoutTitleEn.value = "";
+        workoutTitleVi.value = "";
+        workoutGifUrl.value = "";
+        workoutSets.value = 3;
+        workoutReps.value = 15;
+      }
+
+      workoutDialog.showModal();
+    }
+
+    function deleteWorkout(id) {
+      const t = translations[currentLang];
+      if (hiitWorkouts.length <= 1) {
+        showToast(
+          currentLang === 'vi' ? "Không thể xóa!" : "Cannot delete!",
+          currentLang === 'vi' ? "Phải có ít nhất một bài tập." : "At least one workout is required.",
+          false,
+          "critical"
+        );
+        return;
+      }
+      if (confirm(t.confirmDeleteWorkout || "Delete this workout?")) {
+        hiitWorkouts = hiitWorkouts.filter(w => w.id !== id);
+        localStorage.setItem("hiitWorkouts", JSON.stringify(hiitWorkouts));
+        renderWorkoutsSettingsList();
+
+        // Also if we deleted the current active workout, reset sequence
+        activeHiitIndex = -1;
+        hiitQueue = []; // Reset queue since the list changed
+      }
+    }
+
+    function handleWorkoutFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById("editWorkoutId").value;
+      const titleEnVal = document.getElementById("workoutTitleEn").value.trim();
+      const titleViVal = document.getElementById("workoutTitleVi").value.trim();
+      const gifVal = document.getElementById("workoutGifUrl").value.trim();
+      const setsVal = Math.max(1, Math.min(10, parseInt(document.getElementById("workoutSets").value, 10) || 3));
+      const repsVal = Math.max(1, Math.min(100, parseInt(document.getElementById("workoutReps").value, 10) || 10));
+
+      if (id) {
+        // Edit existing
+        const workout = hiitWorkouts.find(w => w.id === id);
+        if (workout) {
+          workout.titleEn = titleEnVal;
+          workout.titleVi = titleViVal;
+          workout.gif = gifVal;
+          workout.sets = setsVal;
+          workout.reps = repsVal;
+        }
+      } else {
+        // Add new
+        const newId = "custom_" + Date.now();
+        hiitWorkouts.push({
+          id: newId,
+          titleEn: titleEnVal,
+          titleVi: titleViVal,
+          gif: gifVal,
+          sets: setsVal,
+          reps: repsVal
+        });
+        hiitQueue = []; // Reset queue since a new workout was added
+      }
+
+      // Save to localStorage immediately so it's not lost
+      localStorage.setItem("hiitWorkouts", JSON.stringify(hiitWorkouts));
+
+      // Update UI
+      renderWorkoutsSettingsList();
+
+      // Close Dialog
+      document.getElementById("workoutDialog").close();
+    }
+
+    function handleFolderScanChange(e) {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+
+      let count = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (/\.(webp|gif|png|jpe?g)$/i.test(file.name)) {
+          const gifPath = "listWorkoutGif/" + file.name;
+
+          // Clean name: e.g. "Push-ups" -> "Push ups"
+          const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
+          const cleanName = fileNameWithoutExt.replace(/[_-]/g, ' ').trim();
+
+          const exists = hiitWorkouts.some(w => w.gif === gifPath);
+          if (!exists) {
+            hiitWorkouts.push({
+              id: "scanned_" + Date.now() + "_" + i,
+              titleEn: cleanName,
+              titleVi: cleanName,
+              gif: gifPath,
+              sets: 3,
+              reps: 10
+            });
+            count++;
+          }
+        }
+      }
+
+      const t = translations[currentLang];
+      if (count > 0) {
+        localStorage.setItem("hiitWorkouts", JSON.stringify(hiitWorkouts));
+        hiitQueue = []; // Reset queue since the list changed
+        renderWorkoutsSettingsList();
+        showToast(
+          currentLang === 'vi' ? `Đã thêm ${count} bài tập mới!` : `Added ${count} new workouts!`,
+          currentLang === 'vi' ? "Hãy điều chỉnh số hiệp/rep trong cài đặt." : "Adjust sets/reps in settings.",
+          false,
+          "good"
+        );
+      } else {
+        showToast(
+          currentLang === 'vi' ? "Không tìm thấy bài tập mới nào" : "No new workouts found",
+          currentLang === 'vi' ? "Tất cả bài tập trong thư mục đã được nạp." : "All workouts in the folder are already loaded.",
+          false,
+          "warning"
+        );
+      }
+
+      // Reset value to allow scanning same directory again
+      e.target.value = "";
+    }
+
+    // ----------------------------------------------------
+    // EVENT LISTENERS SETUP
+    // ----------------------------------------------------
+    function setupEventListeners() {
+      // Nav Tabs switching
+      navFocus.addEventListener("click", switchToActiveTimerView);
+      navStats.addEventListener("click", () => switchView('stats'));
+      navSettings.addEventListener("click", () => switchView('settings'));
+
+      // Inside focus controls
+      btnStartPause.addEventListener("click", toggleTimer);
+      btnSkipTimer.addEventListener("click", skipTimer);
+      btnResetTimer.addEventListener("click", () => {
+        const t = translations[currentLang];
+        if (confirm(t.confirmResetTimer || "Reset current timer and restore defaults?")) resetTimer();
+      });
+      btnStatsShortcut.addEventListener("click", () => switchView('stats'));
+      btnQuickResetTrigger.addEventListener("click", () => switchView('reset'));
+
+      // Break controls
+      btnNextStretch.addEventListener("click", initHiitSequence);
+      btnSkipBreak.addEventListener("click", () => {
+        const t = translations[currentLang];
+        if (confirm(t.confirmSkipBreak || "Skip the rest of your movement break and return to focus?")) {
+          handlePhaseComplete();
+        }
+      });
+
+      // Breathing controls
+      btnExitBreathing.addEventListener("click", () => endBoxBreathing(false));
+
+      // Stats controls
+      btnBackFromStats.addEventListener("click", switchToActiveTimerView);
+
+      // Settings controls
+      btnSaveSettings.addEventListener("click", saveSettings);
+      btnClearData.addEventListener("click", clearLocalData);
+
+      // Workout List and Dialog controls
+      const btnAddWorkout = document.getElementById("btnAddWorkout");
+      if (btnAddWorkout) {
+        btnAddWorkout.addEventListener("click", () => openWorkoutDialog());
+      }
+
+      const btnCancelDialog = document.getElementById("btnCancelDialog");
+      if (btnCancelDialog) {
+        btnCancelDialog.addEventListener("click", () => {
+          document.getElementById("workoutDialog").close();
+        });
+      }
+
+      const workoutForm = document.getElementById("workoutForm");
+      if (workoutForm) {
+        workoutForm.addEventListener("submit", handleWorkoutFormSubmit);
+      }
+
+      // Folder Scan controls
+      const btnScanFolder = document.getElementById("btnScanFolder");
+      const folderScanner = document.getElementById("folderScanner");
+      if (btnScanFolder && folderScanner) {
+        btnScanFolder.addEventListener("click", () => {
+          const t = translations[currentLang];
+          alert(t.scanSelectFolder || "Select the listWorkoutGif folder to import workouts");
+          folderScanner.click();
+        });
+        folderScanner.addEventListener("change", handleFolderScanChange);
+      }
+    }
+
+    // Run Initialization on Load
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+
+  <!-- Add/Edit Workout Dialog -->
+  <dialog id="workoutDialog">
+    <form id="workoutForm" method="dialog" style="display: flex; flex-direction: column; gap: 16px;">
+      <h3 id="dialogTitle" style="font-size: 1.15rem; font-weight: 700; color: var(--accent);">Add Workout</h3>
+      <input type="hidden" id="editWorkoutId">
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-t="workoutTitleEn">Title (English)</label>
+        <input type="text" id="workoutTitleEn" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); width: 100%; outline: none;">
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-t="workoutTitleVi">Title (Vietnamese)</label>
+        <input type="text" id="workoutTitleVi" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); width: 100%; outline: none;">
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-t="workoutGifUrl">GIF/Image URL or Path</label>
+        <input type="text" id="workoutGifUrl" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); width: 100%; outline: none;" placeholder="e.g. listWorkoutGif/Jumping jacks interval.webp">
+      </div>
+
+      <div style="display: flex; gap: 16px;">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-t="workoutSets">Sets</label>
+          <input type="number" id="workoutSets" min="1" max="10" value="3" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); text-align: center; width: 100%; outline: none;">
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-t="workoutReps">Reps</label>
+          <input type="number" id="workoutReps" min="1" max="100" value="15" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); text-align: center; width: 100%; outline: none;">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px;">
+        <button type="button" id="btnCancelDialog" class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

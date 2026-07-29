@@ -24,6 +24,8 @@ function runSanityCheck() {
   console.log('Found script block. Length:', jsCode.length, 'characters.');
 
   // Create mock DOM environment
+  const storage = {};
+  const elementCache = {};
   const mockWindow = {
     addEventListener: () => {},
     document: {
@@ -32,27 +34,43 @@ function runSanityCheck() {
         style: {},
         addEventListener: () => {},
       }),
+      querySelectorAll: () => [],
+      querySelector: (selector) => {
+        const el = mockWindow.document.getElementById(selector);
+        el.getBoundingClientRect = () => ({ left: 100, top: 100, width: 200, height: 200 });
+        return el;
+      },
+      body: {
+        classList: {
+          contains: () => false,
+          add: () => {},
+          remove: () => {}
+        }
+      },
       getElementById: (id) => {
-        // Return dummy elements with necessary APIs
-        const element = {
-          addEventListener: () => {},
-          classList: { add: () => {}, remove: () => {} },
-          style: {},
-          setAttribute: () => {},
-          appendChild: () => {},
-          querySelectorAll: () => [],
-          cloneNode: function() { return Object.assign({}, this); }
-        };
-        element.parentNode = {
-          replaceChild: (newChild, oldChild) => {}
-        };
-        return element;
+        if (!elementCache[id]) {
+          elementCache[id] = {
+            addEventListener: () => {},
+            classList: { add: () => {}, remove: () => {} },
+            style: {},
+            setAttribute: () => {},
+            appendChild: () => {},
+            querySelectorAll: () => [],
+            cloneNode: function() { return Object.assign({}, this); },
+            close: () => {},
+            showModal: () => {}
+          };
+          elementCache[id].parentNode = {
+            replaceChild: (newChild, oldChild) => {}
+          };
+        }
+        return elementCache[id];
       }
     },
     localStorage: {
-      getItem: () => null,
-      setItem: () => {},
-      clear: () => {}
+      getItem: (key) => storage[key] || null,
+      setItem: (key, val) => { storage[key] = String(val); },
+      clear: () => { Object.keys(storage).forEach(k => delete storage[k]); }
     },
     navigator: {
       wakeLock: {
@@ -117,6 +135,68 @@ function runSanityCheck() {
       prevIndex = newIndex;
     }
     console.log('✅ Success: Workout rotation test passed.');
+
+    // Test timer state persistence
+    console.log('Running test for timer state persistence...');
+    const saveTimerState = context.saveTimerState;
+    const restoreTimerState = context.restoreTimerState;
+    if (typeof saveTimerState !== 'function' || typeof restoreTimerState !== 'function') {
+      throw new Error('saveTimerState or restoreTimerState is not a function in context!');
+    }
+
+    // Modify timer variables in context
+    vm.runInContext('timeLeft = 1234; currentMode = "focus"; timerStatus = "paused";', context);
+    saveTimerState();
+
+    // Verify localStorage has the key
+    const savedStateStr = storage['focus_station_timer_state'];
+    if (!savedStateStr) {
+      throw new Error('Timer state was not saved to localStorage!');
+    }
+    const savedState = JSON.parse(savedStateStr);
+    if (savedState.timeLeft !== 1234 || savedState.currentMode !== 'focus' || savedState.timerStatus !== 'paused') {
+      throw new Error('Saved timer state values are incorrect!');
+    }
+
+    // Reset variables in context and restore
+    vm.runInContext('timeLeft = 0; currentMode = "break"; timerStatus = "idle";', context);
+    const restored = restoreTimerState();
+    if (!restored) {
+      throw new Error('restoreTimerState returned false!');
+    }
+    const restoredTimeLeft = vm.runInContext('timeLeft', context);
+    const restoredMode = vm.runInContext('currentMode', context);
+    const restoredStatus = vm.runInContext('timerStatus', context);
+    if (restoredTimeLeft !== 1234 || restoredMode !== 'focus' || restoredStatus !== 'paused') {
+      throw new Error(`Restored values are incorrect: timeLeft=${restoredTimeLeft}, mode=${restoredMode}, status=${restoredStatus}`);
+    }
+    console.log('✅ Success: Timer state persistence test passed.');
+
+    // Test timer edit submit logic
+    console.log('Running test for timer edit submit...');
+    const handleEditTimerSubmit = context.handleEditTimerSubmit;
+    if (typeof handleEditTimerSubmit !== 'function') {
+      throw new Error('handleEditTimerSubmit is not a function in context!');
+    }
+
+    // Set configuration
+    vm.runInContext('focusMinutes = 45; currentMode = "focus"; timeLeft = 2700;', context);
+
+    // Mock form inputs values
+    const minInput = mockWindow.document.getElementById('editTimerMinutes');
+    const secInput = mockWindow.document.getElementById('editTimerSeconds');
+    minInput.value = 25;
+    secInput.value = 30;
+
+    // Call submit handler (with mock event preventDefault)
+    handleEditTimerSubmit({ preventDefault: () => {} });
+
+    // Verify timeLeft in context was updated correctly (25m 30s = 1530s)
+    const newTimeLeft = vm.runInContext('timeLeft', context);
+    if (newTimeLeft !== 1530) {
+      throw new Error(`Expected timeLeft to be 1530, got ${newTimeLeft}`);
+    }
+    console.log('✅ Success: Timer edit submit test passed.');
   } catch (err) {
     console.error('❌ Sanity check failed!');
     console.error(err);

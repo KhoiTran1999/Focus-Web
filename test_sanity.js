@@ -34,14 +34,19 @@ function runSanityCheck() {
       }),
       getElementById: (id) => {
         // Return dummy elements with necessary APIs
-        return {
+        const element = {
           addEventListener: () => {},
           classList: { add: () => {}, remove: () => {} },
           style: {},
           setAttribute: () => {},
           appendChild: () => {},
-          querySelectorAll: () => []
+          querySelectorAll: () => [],
+          cloneNode: function() { return Object.assign({}, this); }
         };
+        element.parentNode = {
+          replaceChild: (newChild, oldChild) => {}
+        };
+        return element;
       }
     },
     localStorage: {

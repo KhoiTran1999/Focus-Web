@@ -1583,7 +1583,7 @@
 
     // Break View Elements
     const breakTimeLeftDigits = document.getElementById("breakTimeLeftDigits");
-    const workoutGifDisplay = document.getElementById("workoutGifDisplay");
+    let workoutGifDisplay = document.getElementById("workoutGifDisplay");
     const stretchTitle = document.getElementById("stretchTitle");
     const stretchDesc = document.getElementById("stretchDesc");
     const workoutSetsSection = document.getElementById("workoutSetsSection");
@@ -2346,8 +2346,24 @@
       const workout = hiitWorkouts[index];
       const t = translations[currentLang];
 
-      workoutGifDisplay.src = "";
-      workoutGifDisplay.src = workout.gif + (workout.gif.includes("?") ? "&" : "?") + "t=" + Date.now();
+      if (workoutGifDisplay && typeof workoutGifDisplay.cloneNode === 'function' && workoutGifDisplay.parentNode) {
+        // Recreate image element to force mobile browsers to instantiate a new decoding pipeline and restart the animation
+        const newImg = workoutGifDisplay.cloneNode(true);
+        newImg.src = "";
+
+        // Delay setting src to ensure DOM layout reflow and transitions are complete
+        setTimeout(() => {
+          newImg.src = workout.gif + (workout.gif.includes("?") ? "&" : "?") + "t=" + Date.now();
+        }, 100);
+
+        workoutGifDisplay.parentNode.replaceChild(newImg, workoutGifDisplay);
+        workoutGifDisplay = newImg;
+      } else if (workoutGifDisplay) {
+        workoutGifDisplay.src = "";
+        setTimeout(() => {
+          workoutGifDisplay.src = workout.gif + (workout.gif.includes("?") ? "&" : "?") + "t=" + Date.now();
+        }, 100);
+      }
 
       const title = currentLang === 'vi' ? workout.titleVi : workout.titleEn;
       stretchTitle.innerText = title;

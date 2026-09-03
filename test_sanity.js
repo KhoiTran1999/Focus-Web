@@ -75,7 +75,14 @@ function runSanityCheck() {
     navigator: {
       wakeLock: {
         request: async () => ({ addEventListener: () => {} })
+      },
+      serviceWorker: {
+        register: async () => ({})
       }
+    },
+    Notification: {
+      permission: "default",
+      requestPermission: async () => "granted"
     },
     setInterval: () => 1,
     clearInterval: () => {},
@@ -215,6 +222,22 @@ function runSanityCheck() {
       throw new Error('Sound state failed to enable or persist!');
     }
     console.log('✅ Success: Sound toggle test passed.');
+
+    // Test Pomodoro cycle count and Long Break transition
+    console.log('Running test for Pomodoro cycle progression...');
+    vm.runInContext('currentCycleCount = 3; cyclesBeforeLongBreak = 4; isLongBreak = false; currentMode = "focus"; totalFocusSecondsElapsedThisSession = 1500;', context);
+    const handlePhaseComplete = context.handlePhaseComplete;
+    if (typeof handlePhaseComplete !== 'function') {
+      throw new Error('handlePhaseComplete is not a function in context!');
+    }
+    handlePhaseComplete();
+    const isLongBreakVal = vm.runInContext('isLongBreak', context);
+    const cycleCountVal = vm.runInContext('currentCycleCount', context);
+    const currentModeVal = vm.runInContext('currentMode', context);
+    if (!isLongBreakVal || cycleCountVal !== 0 || currentModeVal !== 'break') {
+      throw new Error(`Pomodoro Long Break transition failed: isLongBreak=${isLongBreakVal}, cycleCount=${cycleCountVal}, mode=${currentModeVal}`);
+    }
+    console.log('✅ Success: Pomodoro Long Break cycle test passed.');
   } catch (err) {
     console.error('❌ Sanity check failed!');
     console.error(err);

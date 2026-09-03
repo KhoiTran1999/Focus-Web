@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Focus & Wellness Desk Station</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg" id="faviconLink">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#15161b">
   <style>
     /* CSS custom properties from dataviz palette.md & UI parameters */
     :root {
@@ -1020,6 +1023,26 @@
       opacity: 0.6;
     }
 
+    /* Cycle indicator badge in header */
+    .cycle-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-muted);
+      padding: 4px 8px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      letter-spacing: 0.03em;
+    }
+    .cycle-badge.long-break {
+      color: var(--status-good);
+      background: rgba(12, 163, 12, 0.15);
+      border-color: rgba(12, 163, 12, 0.3);
+    }
+
     /* Keyboard shortcut helper pill */
     .shortcut-hint {
       display: inline-flex;
@@ -1070,6 +1093,11 @@
       </div>
 
       <div class="header-indicators">
+        <!-- Pomodoro Cycle badge -->
+        <div class="cycle-badge" id="cycleBadge" title="Pomodoro Cycle">
+          <span>🍅</span>
+          <span id="cycleBadgeText">1/4</span>
+        </div>
         <!-- Sound effects toggle -->
         <button class="sound-toggle-btn" id="btnSoundToggle" title="Sound Effects (On/Off)">
           <svg viewBox="0 0 24 24" id="soundToggleIcon" style="width: 20px; height: 20px; fill: currentColor;">
@@ -1279,6 +1307,26 @@
 
             <div class="setting-item">
               <div class="setting-info">
+                <span class="setting-label" data-t="longBreakPeriod">Long Break Period</span>
+                <span class="setting-desc" data-t="longBreakDesc">Duration of long break in minutes</span>
+              </div>
+              <div class="setting-control">
+                <input type="number" id="inputLongBreakTime" min="5" max="90" value="30">
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label" data-t="cyclesBeforeLongBreak">Cycles Before Long Break</span>
+                <span class="setting-desc" data-t="cyclesDesc">Number of focus sessions before long break</span>
+              </div>
+              <div class="setting-control">
+                <input type="number" id="inputCyclesBeforeLongBreak" min="1" max="12" value="4">
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
                 <span class="setting-label" id="settingLabelLang" data-t="settingLabelLang">Language / Ngôn ngữ</span>
                 <span class="setting-desc" id="settingDescLang" data-t="settingDescLang">Select interface language</span>
               </div>
@@ -1309,6 +1357,19 @@
 
           <div class="settings-group">
             <span class="settings-group-label" data-t="wellnessReminders">Wellness Reminders</span>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label" data-t="systemNotifications">System Notifications</span>
+                <span class="setting-desc" data-t="systemNotificationsDesc">Web notifications when timer completes</span>
+              </div>
+              <div class="setting-control">
+                <label class="switch">
+                  <input type="checkbox" id="checkboxNotifications" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
 
             <div class="setting-item">
               <div class="setting-info">
@@ -1373,7 +1434,12 @@
     // State Variables
     let focusMinutes = 45;
     let breakMinutes = 15;
+    let longBreakMinutes = 30;
+    let cyclesBeforeLongBreak = 4;
+    let currentCycleCount = 0; // completed focus sessions in current cycle
+    let isLongBreak = false;
     let enableAlerts = true;
+    let enableNotifications = true;
     let isDebugMode = false;
     let currentLang = 'vi'; // Default to Vietnamese
 
@@ -1430,6 +1496,15 @@
         focusDesc: "Duration of focus phase in minutes",
         breakPeriod: "Break Period",
         breakDesc: "Duration of break phase in minutes",
+        longBreakPeriod: "Long Break Period",
+        longBreakDesc: "Duration of long break in minutes",
+        cyclesBeforeLongBreak: "Cycles Before Long Break",
+        cyclesDesc: "Number of focus sessions before long break",
+        systemNotifications: "System Notifications",
+        systemNotificationsDesc: "Web notifications when timer completes",
+        longBreakMode: "Long Break",
+        longBreakTitle: "Long Break Time!",
+        longBreakDescMsg: "You completed your focus cycle! Take a well-deserved rest.",
         settingLabelLang: "Language / Ngôn ngữ",
         settingDescLang: "Select interface language",
         wellnessReminders: "Wellness Reminders",
@@ -1524,6 +1599,15 @@
         focusDesc: "Thời lượng của mỗi phiên tập trung (phút)",
         breakPeriod: "Thời gian Nghỉ",
         breakDesc: "Thời lượng của mỗi phiên nghỉ ngơi (phút)",
+        longBreakPeriod: "Thời gian Nghỉ Dài",
+        longBreakDesc: "Thời lượng của phiên nghỉ dài (phút)",
+        cyclesBeforeLongBreak: "Số hiệp trước khi Nghỉ Dài",
+        cyclesDesc: "Số phiên tập trung cần hoàn thành trước khi nghỉ dài",
+        systemNotifications: "Thông báo Hệ thống",
+        systemNotificationsDesc: "Nhận thông báo trình duyệt khi hết giờ",
+        longBreakMode: "Nghỉ dài",
+        longBreakTitle: "Đến giờ Nghỉ Dài!",
+        longBreakDescMsg: "Bạn đã hoàn thành chu kỳ tập trung! Hãy nghỉ ngơi thật thoải mái.",
         settingLabelLang: "Language / Ngôn ngữ",
         settingDescLang: "Chọn ngôn ngữ hiển thị",
         wellnessReminders: "Nhắc nhở sức khỏe",
@@ -1860,6 +1944,7 @@
     // Alerts Toast
     const alertToast = document.getElementById("alertToast");
     const toastIcon = document.getElementById("toastIcon");
+    const toastIconContainer = document.getElementById("toastIconContainer");
     const toastTitle = document.getElementById("toastTitle");
     const toastDesc = document.getElementById("toastDesc");
     const quickPosture = document.getElementById("quickPosture");
@@ -1906,10 +1991,16 @@
     // Settings View Elements
     const inputFocusTime = document.getElementById("inputFocusTime");
     const inputBreakTime = document.getElementById("inputBreakTime");
+    const inputLongBreakTime = document.getElementById("inputLongBreakTime");
+    const inputCyclesBeforeLongBreak = document.getElementById("inputCyclesBeforeLongBreak");
+    const checkboxNotifications = document.getElementById("checkboxNotifications");
     const checkboxAlerts = document.getElementById("checkboxAlerts");
     const checkboxDebug = document.getElementById("checkboxDebug");
     const btnSaveSettings = document.getElementById("btnSaveSettings");
     const btnClearData = document.getElementById("btnClearData");
+    const cycleBadge = document.getElementById("cycleBadge");
+    const cycleBadgeText = document.getElementById("cycleBadgeText");
+    const faviconLink = document.getElementById("faviconLink");
 
     // Sprout grow SVG path steps (sprout -> leaves -> flower)
     const growthStages = [
@@ -1939,6 +2030,14 @@
       checkWakeLockSupport();
       renderStats();
       updateUIStrings();
+      updateCycleBadgeUI();
+
+      // Register Service Worker for offline PWA capability
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(() => {});
+        });
+      }
 
       // Auto re-acquire wake lock on visibility change (active tab returns)
       document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -1950,12 +2049,18 @@
     function loadSettings() {
       const storedFocus = localStorage.getItem("focusMinutes");
       const storedBreak = localStorage.getItem("breakMinutes");
+      const storedLongBreak = localStorage.getItem("longBreakMinutes");
+      const storedCycles = localStorage.getItem("cyclesBeforeLongBreak");
+      const storedNotifications = localStorage.getItem("enableNotifications");
       const storedAlerts = localStorage.getItem("enableAlerts");
       const storedLang = localStorage.getItem("currentLang");
       const storedSound = localStorage.getItem("soundEnabled");
 
       if (storedFocus) focusMinutes = parseInt(storedFocus, 10);
       if (storedBreak) breakMinutes = parseInt(storedBreak, 10);
+      if (storedLongBreak) longBreakMinutes = parseInt(storedLongBreak, 10);
+      if (storedCycles) cyclesBeforeLongBreak = parseInt(storedCycles, 10);
+      if (storedNotifications !== null) enableNotifications = storedNotifications === "true";
       if (storedAlerts !== null) enableAlerts = storedAlerts === "true";
       if (storedLang) currentLang = storedLang;
       if (storedSound !== null) soundEnabled = storedSound === "true";
@@ -2016,6 +2121,11 @@
       inputFocusTime.value = focusMinutes;
       breakMinutes = Math.max(1, breakMinutes);
       inputBreakTime.value = breakMinutes;
+      longBreakMinutes = Math.max(1, longBreakMinutes);
+      inputLongBreakTime.value = longBreakMinutes;
+      cyclesBeforeLongBreak = Math.max(1, cyclesBeforeLongBreak);
+      inputCyclesBeforeLongBreak.value = cyclesBeforeLongBreak;
+      checkboxNotifications.checked = enableNotifications;
       checkboxAlerts.checked = enableAlerts;
       document.getElementById("selectLang").value = currentLang;
 
@@ -2028,9 +2138,17 @@
     function saveSettings() {
       focusMinutes = Math.max(5, Math.min(180, parseInt(inputFocusTime.value, 10) || 45));
       breakMinutes = Math.max(1, Math.min(60, parseInt(inputBreakTime.value, 10) || 15));
+      longBreakMinutes = Math.max(1, Math.min(120, parseInt(inputLongBreakTime.value, 10) || 30));
+      cyclesBeforeLongBreak = Math.max(1, Math.min(12, parseInt(inputCyclesBeforeLongBreak.value, 10) || 4));
+      enableNotifications = checkboxNotifications.checked;
       enableAlerts = checkboxAlerts.checked;
       isDebugMode = checkboxDebug.checked;
       currentLang = document.getElementById("selectLang").value;
+
+      // If user toggled notifications on, request permission proactively
+      if (enableNotifications && "Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
 
       // Update dynamic workouts from sets/reps inputs
       document.querySelectorAll(".workout-sets-input").forEach(input => {
@@ -2050,6 +2168,9 @@
 
       localStorage.setItem("focusMinutes", focusMinutes);
       localStorage.setItem("breakMinutes", breakMinutes);
+      localStorage.setItem("longBreakMinutes", longBreakMinutes);
+      localStorage.setItem("cyclesBeforeLongBreak", cyclesBeforeLongBreak);
+      localStorage.setItem("enableNotifications", enableNotifications);
       localStorage.setItem("enableAlerts", enableAlerts);
       localStorage.setItem("currentLang", currentLang);
 
@@ -2246,6 +2367,8 @@
         document.getElementById("lblBreakLeft").innerText = t.breakLeft;
       }
 
+      updateCycleBadgeUI();
+
       // Re-render the workouts settings list if the function is defined
       if (typeof renderWorkoutsSettingsList === 'function') {
         renderWorkoutsSettingsList();
@@ -2341,7 +2464,9 @@
         totalFocusSecondsElapsedThisSession: totalFocusSecondsElapsedThisSession,
         hiitSetsCompleted: hiitSetsCompleted,
         activeHiitIndex: activeHiitIndex,
-        hiitQueue: hiitQueue
+        hiitQueue: hiitQueue,
+        currentCycleCount: currentCycleCount,
+        isLongBreak: isLongBreak
       };
       localStorage.setItem(TIMER_STATE_KEY, JSON.stringify(state));
     }
@@ -2359,6 +2484,9 @@
         activeHiitIndex = (state.activeHiitIndex !== undefined) ? state.activeHiitIndex : -1;
         hiitSetsCompleted = state.hiitSetsCompleted || 0;
         hiitQueue = state.hiitQueue || [];
+        currentCycleCount = (state.currentCycleCount !== undefined) ? state.currentCycleCount : 0;
+        isLongBreak = !!state.isLongBreak;
+        updateCycleBadgeUI();
 
         const lastSavedTime = state.lastSavedTime || Date.now();
         const restoredTimeLeft = state.timeLeft || 0;
@@ -2382,25 +2510,38 @@
 
               // Try to transition to break
               currentMode = 'break';
-              const breakSecs = breakMinutes * 60;
-              if (remainingElapsed < breakSecs) {
-                timeLeft = breakSecs - remainingElapsed;
+              currentCycleCount++;
+              if (currentCycleCount >= cyclesBeforeLongBreak) {
+                isLongBreak = true;
+                currentCycleCount = 0;
+              } else {
+                isLongBreak = false;
+              }
+              updateCycleBadgeUI();
+
+              const currentBreakDuration = isLongBreak ? longBreakMinutes * 60 : breakMinutes * 60;
+              if (remainingElapsed < currentBreakDuration) {
+                timeLeft = currentBreakDuration - remainingElapsed;
                 startTimerRunning();
               } else {
                 // Break also expired
                 recordBreakCompleted();
+                isLongBreak = false;
                 currentMode = 'focus';
                 timeLeft = focusMinutes * 60;
                 timerStatus = 'idle';
                 totalFocusSecondsElapsedThisSession = 0;
+                updateCycleBadgeUI();
               }
             } else {
               // Break expired
               recordBreakCompleted();
+              isLongBreak = false;
               currentMode = 'focus';
               timeLeft = focusMinutes * 60;
               timerStatus = 'idle';
               totalFocusSecondsElapsedThisSession = 0;
+              updateCycleBadgeUI();
             }
           }
         } else {
@@ -2412,7 +2553,9 @@
         switchView(currentMode);
         updateTimerDisplay();
 
-        const totalDuration = (currentMode === 'focus') ? focusMinutes * 60 : breakMinutes * 60;
+        const totalDuration = (currentMode === 'focus')
+          ? focusMinutes * 60
+          : (isLongBreak ? longBreakMinutes * 60 : breakMinutes * 60);
         const ratio = totalDuration > 0 ? timeLeft / totalDuration : 1;
 
         if (currentMode === 'focus') {
@@ -2500,6 +2643,30 @@
     // ----------------------------------------------------
     // TIMING ENGINE (FOCUS & BREAK TIMER)
     // ----------------------------------------------------
+    function updateCycleBadgeUI() {
+      if (!cycleBadge || !cycleBadgeText) return;
+      if (isLongBreak) {
+        cycleBadge.classList.add("long-break");
+        cycleBadgeText.innerText = translations[currentLang]?.longBreakMode || "Long Break";
+      } else {
+        cycleBadge.classList.remove("long-break");
+        cycleBadgeText.innerText = `${Math.min(currentCycleCount + 1, cyclesBeforeLongBreak)}/${cyclesBeforeLongBreak}`;
+      }
+    }
+
+    function sendWebNotification(title, body) {
+      if (!enableNotifications || !("Notification" in window)) return;
+      if (Notification.permission === "granted") {
+        try {
+          new Notification(title, {
+            body: body,
+            icon: "icon.svg",
+            badge: "icon.svg"
+          });
+        } catch (e) {}
+      }
+    }
+
     function resetTimer() {
       if (document.body.classList.contains("amoled-mode")) {
         toggleAmoledMode(false);
@@ -2522,16 +2689,22 @@
         totalFocusSecondsElapsedThisSession = 0;
       } else {
         // break mode
-        timeLeft = breakMinutes * 60;
+        timeLeft = (isLongBreak ? longBreakMinutes : breakMinutes) * 60;
         updateTimerDisplay();
         initHiitSequence();
       }
+      updateCycleBadgeUI();
       saveTimerState();
     }
 
     function toggleTimer() {
       const t = translations[currentLang];
       if (timerStatus === 'idle' || timerStatus === 'paused') {
+        // Request Web Notification permission on first user engagement if enabled
+        if (enableNotifications && "Notification" in window && Notification.permission === "default") {
+          Notification.requestPermission();
+        }
+
         // Start or Resume
         timerStatus = 'running';
         updatePlayPauseButtonUI();
@@ -2613,6 +2786,13 @@
       } else if (currentMode === 'break') {
         breakTimeLeftDigits.innerText = formatted;
       }
+
+      // Update dynamic document title
+      const modeLabel = (currentMode === 'focus')
+        ? (translations[currentLang]?.focusMode || 'Focus')
+        : (isLongBreak ? (translations[currentLang]?.longBreakMode || 'Long Break') : (translations[currentLang]?.timeToMove || 'Break'));
+      const statusIcon = (timerStatus === 'running') ? '▶' : (timerStatus === 'paused' ? '⏸' : '⏹');
+      document.title = `${statusIcon} (${formatted}) ${modeLabel} | Focus Station`;
     }
 
     function updateProgressBar(ratio) {
@@ -2661,7 +2841,18 @@
           recordFocusMinutes(earnedMinutes);
         }
 
-        showToast(t.sessionCompleteTitle, t.sessionCompleteDesc, false, "good");
+        // Advance Pomodoro Cycle
+        currentCycleCount++;
+        if (currentCycleCount >= cyclesBeforeLongBreak) {
+          isLongBreak = true;
+          currentCycleCount = 0;
+          showToast(t.longBreakTitle || "Long Break Time!", t.longBreakDescMsg || "Great focus cycle! Take a restful break.", false, "good");
+          sendWebNotification(t.longBreakTitle || "Long Break Time!", t.longBreakDescMsg || "Great focus cycle! Take a restful break.");
+        } else {
+          isLongBreak = false;
+          showToast(t.sessionCompleteTitle, t.sessionCompleteDesc, false, "good");
+          sendWebNotification(t.sessionCompleteTitle, t.sessionCompleteDesc);
+        }
 
         // Auto transition to Break mode
         currentMode = 'break';
@@ -2677,7 +2868,9 @@
         // Break finished
         recordBreakCompleted();
         showToast(t.breakFinishedTitle, t.breakFinishedDesc, false, "accent");
+        sendWebNotification(t.breakFinishedTitle, t.breakFinishedDesc);
 
+        isLongBreak = false;
         currentMode = 'focus';
         switchView('focus');
         resetTimer();
@@ -2695,6 +2888,14 @@
             recordFocusMinutes(earnedMinutes);
           }
 
+          currentCycleCount++;
+          if (currentCycleCount >= cyclesBeforeLongBreak) {
+            isLongBreak = true;
+            currentCycleCount = 0;
+          } else {
+            isLongBreak = false;
+          }
+
           currentMode = 'break';
           switchView('break');
           resetTimer();
@@ -2706,6 +2907,7 @@
           timerInterval = setInterval(timerTick, tickRate);
         } else {
           // Skip break
+          isLongBreak = false;
           currentMode = 'focus';
           switchView('focus');
           resetTimer();

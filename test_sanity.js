@@ -197,6 +197,24 @@ function runSanityCheck() {
       throw new Error(`Expected timeLeft to be 1530, got ${newTimeLeft}`);
     }
     console.log('✅ Success: Timer edit submit test passed.');
+
+    // Test sound effects toggle and persistence
+    console.log('Running test for sound toggle and persistence...');
+    const toggleSound = context.toggleSound;
+    if (typeof toggleSound !== 'function') {
+      throw new Error('toggleSound is not a function in context!');
+    }
+    toggleSound(false);
+    let soundState = vm.runInContext('soundEnabled', context);
+    if (soundState !== false || storage['soundEnabled'] !== 'false') {
+      throw new Error('Sound state failed to disable or persist!');
+    }
+    toggleSound(true);
+    soundState = vm.runInContext('soundEnabled', context);
+    if (soundState !== true || storage['soundEnabled'] !== 'true') {
+      throw new Error('Sound state failed to enable or persist!');
+    }
+    console.log('✅ Success: Sound toggle test passed.');
   } catch (err) {
     console.error('❌ Sanity check failed!');
     console.error(err);

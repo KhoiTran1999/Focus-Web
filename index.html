@@ -1060,6 +1060,69 @@
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
     }
+    .dialog-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .dialog-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .dialog-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .dialog-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .dialog-input {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: #ffffff;
+      padding: 10px;
+      border-radius: 8px;
+      font-family: var(--font-family);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+    .dialog-input:focus {
+      border-color: var(--accent);
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+    .dialog-row {
+      display: flex;
+      gap: 16px;
+    }
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .dialog-timer-picker {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      margin: 10px 0;
+    }
+    .dialog-timer-col {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 70px;
+    }
+    .dialog-timer-input {
+      font-size: 1.25rem;
+      text-align: center;
+    }
 
     /* Workout sets tracker buttons */
     .set-tracker-btn {
@@ -2038,6 +2101,7 @@
     let statsData = {};
 
     // DOM Elements
+    const brandTitle = document.getElementById("brandTitle");
     const stationContainer = document.getElementById("stationContainer");
     const timerDigits = document.getElementById("timerDigits");
     const timerPhaseLabel = document.getElementById("timerPhaseLabel");
@@ -2082,6 +2146,7 @@
 
     // Break View Elements
     const breakTimeLeftDigits = document.getElementById("breakTimeLeftDigits");
+    const lblBreakLeft = document.getElementById("lblBreakLeft");
     let workoutGifDisplay = document.getElementById("workoutGifDisplay");
     const stretchTitle = document.getElementById("stretchTitle");
     const stretchDesc = document.getElementById("stretchDesc");
@@ -2105,6 +2170,7 @@
     const btnBackFromStats = document.getElementById("btnBackFromStats");
 
     // Settings View Elements
+    const selectLang = document.getElementById("selectLang");
     const inputFocusTime = document.getElementById("inputFocusTime");
     const inputBreakTime = document.getElementById("inputBreakTime");
     const inputLongBreakTime = document.getElementById("inputLongBreakTime");
@@ -2117,6 +2183,24 @@
     const cycleBadge = document.getElementById("cycleBadge");
     const cycleBadgeText = document.getElementById("cycleBadgeText");
     const faviconLink = document.getElementById("faviconLink");
+
+    // Dialog Elements
+    const editTimerDialog = document.getElementById("editTimerDialog");
+    const editTimerMinutes = document.getElementById("editTimerMinutes");
+    const editTimerSeconds = document.getElementById("editTimerSeconds");
+    const workoutDialog = document.getElementById("workoutDialog");
+    const dialogTitle = document.getElementById("dialogTitle");
+    const editWorkoutId = document.getElementById("editWorkoutId");
+    const workoutTitleEn = document.getElementById("workoutTitleEn");
+    const workoutTitleVi = document.getElementById("workoutTitleVi");
+    const workoutGifUrl = document.getElementById("workoutGifUrl");
+    const workoutSets = document.getElementById("workoutSets");
+    const workoutReps = document.getElementById("workoutReps");
+    const workoutsSettingsList = document.getElementById("workoutsSettingsList");
+
+    // Memoized timer display state to skip redundant DOM and document.title updates
+    let lastFormattedTime = "";
+    let lastDocumentTitle = "";
 
     // Sprout grow SVG path steps (sprout -> leaves -> flower)
     const growthStages = [
@@ -2243,7 +2327,7 @@
       inputCyclesBeforeLongBreak.value = cyclesBeforeLongBreak;
       checkboxNotifications.checked = enableNotifications;
       checkboxAlerts.checked = enableAlerts;
-      document.getElementById("selectLang").value = currentLang;
+      selectLang.value = currentLang;
 
       // Render the dynamic settings list of workouts
       if (typeof renderWorkoutsSettingsList === "function") {
@@ -2259,7 +2343,7 @@
       enableNotifications = checkboxNotifications.checked;
       enableAlerts = checkboxAlerts.checked;
       isDebugMode = checkboxDebug.checked;
-      currentLang = document.getElementById("selectLang").value;
+      currentLang = selectLang.value;
 
       // If user toggled notifications on, request permission proactively
       if (enableNotifications && "Notification" in window && Notification.permission === "default") {
@@ -2480,7 +2564,7 @@
         if (activeHiitIndex >= 0 && activeHiitIndex < hiitWorkouts.length) {
           loadHiitWorkout(activeHiitIndex);
         }
-        document.getElementById("lblBreakLeft").innerText = t.breakLeft;
+        if (lblBreakLeft) lblBreakLeft.innerText = t.breakLeft;
       }
 
       updateCycleBadgeUI();
@@ -2704,13 +2788,9 @@
     let wasRunningBeforeEdit = false;
 
     function openEditTimerDialog() {
-      const dialog = document.getElementById("editTimerDialog");
-      const minInput = document.getElementById("editTimerMinutes");
-      const secInput = document.getElementById("editTimerSeconds");
-
       const totalSecs = Math.round(timeLeft);
-      minInput.value = Math.floor(totalSecs / 60);
-      secInput.value = totalSecs % 60;
+      editTimerMinutes.value = Math.floor(totalSecs / 60);
+      editTimerSeconds.value = totalSecs % 60;
 
       if (timerStatus === 'running') {
         wasRunningBeforeEdit = true;
@@ -2720,15 +2800,13 @@
         wasRunningBeforeEdit = false;
       }
 
-      dialog.showModal();
+      editTimerDialog.showModal();
     }
 
     function handleEditTimerSubmit(e) {
       e.preventDefault();
-      const minInput = document.getElementById("editTimerMinutes");
-      const secInput = document.getElementById("editTimerSeconds");
-      const mins = Math.max(0, parseInt(minInput.value, 10) || 0);
-      const secs = Math.max(0, Math.min(59, parseInt(secInput.value, 10) || 0));
+      const mins = Math.max(0, parseInt(editTimerMinutes.value, 10) || 0);
+      const secs = Math.max(0, Math.min(59, parseInt(editTimerSeconds.value, 10) || 0));
 
       timeLeft = mins * 60 + secs;
 
@@ -2740,7 +2818,7 @@
         setSproutStage((1 - ratio) * 100);
       }
 
-      document.getElementById("editTimerDialog").close();
+      editTimerDialog.close();
 
       if (wasRunningBeforeEdit) {
         startTimerRunning();
@@ -2750,7 +2828,7 @@
     }
 
     function handleEditTimerCancel() {
-      document.getElementById("editTimerDialog").close();
+      editTimerDialog.close();
       if (wasRunningBeforeEdit) {
         startTimerRunning();
       }
@@ -2897,18 +2975,25 @@
       const seconds = displaySeconds % 60;
       const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-      if (currentMode === 'focus') {
-        timerDigits.innerText = formatted;
-      } else if (currentMode === 'break') {
-        breakTimeLeftDigits.innerText = formatted;
+      if (formatted !== lastFormattedTime) {
+        lastFormattedTime = formatted;
+        if (currentMode === 'focus') {
+          timerDigits.innerText = formatted;
+        } else if (currentMode === 'break') {
+          breakTimeLeftDigits.innerText = formatted;
+        }
       }
 
-      // Update dynamic document title
+      // Update dynamic document title only when title string actually changes
       const modeLabel = (currentMode === 'focus')
         ? (translations[currentLang]?.focusMode || 'Focus')
         : (isLongBreak ? (translations[currentLang]?.longBreakMode || 'Long Break') : (translations[currentLang]?.timeToMove || 'Break'));
       const statusIcon = (timerStatus === 'running') ? '▶' : (timerStatus === 'paused' ? '⏸' : '⏹');
-      document.title = `${statusIcon} (${formatted}) ${modeLabel} | Focus Station`;
+      const newTitle = `${statusIcon} (${formatted}) ${modeLabel} | Focus Station`;
+      if (newTitle !== lastDocumentTitle) {
+        lastDocumentTitle = newTitle;
+        document.title = newTitle;
+      }
     }
 
     function updateProgressBar(ratio) {
@@ -3093,6 +3178,14 @@
       return audioCtx;
     }
 
+    // Unlock AudioContext on first user interaction gesture
+    function unlockAudioContext() {
+      const ctx = getAudioContext();
+      if (ctx && ctx.state === "suspended") {
+        ctx.resume().catch(() => {});
+      }
+    }
+
     function playSound(type) {
       if (!soundEnabled) return;
       try {
@@ -3112,6 +3205,12 @@
             gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.45);
             osc.connect(gain);
             gain.connect(ctx.destination);
+            osc.onended = () => {
+              try {
+                osc.disconnect();
+                gain.disconnect();
+              } catch (_) {}
+            };
             osc.start(now + idx * 0.08);
             osc.stop(now + idx * 0.08 + 0.5);
           });
@@ -3126,6 +3225,12 @@
           gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
           osc.connect(gain);
           gain.connect(ctx.destination);
+          osc.onended = () => {
+            try {
+              osc.disconnect();
+              gain.disconnect();
+            } catch (_) {}
+          };
           osc.start(now);
           osc.stop(now + 0.09);
         } else if (type === "complete") {
@@ -3140,6 +3245,12 @@
             gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.12 + 1.2);
             osc.connect(gain);
             gain.connect(ctx.destination);
+            osc.onended = () => {
+              try {
+                osc.disconnect();
+                gain.disconnect();
+              } catch (_) {}
+            };
             osc.start(now + idx * 0.12);
             osc.stop(now + idx * 0.12 + 1.3);
           });
@@ -3155,6 +3266,12 @@
             gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.14 + 0.6);
             osc.connect(gain);
             gain.connect(ctx.destination);
+            osc.onended = () => {
+              try {
+                osc.disconnect();
+                gain.disconnect();
+              } catch (_) {}
+            };
             osc.start(now + idx * 0.14);
             osc.stop(now + idx * 0.14 + 0.7);
           });
@@ -3348,12 +3465,11 @@
     }
 
     function renderSetsTracker(setsCount, repsCount) {
-      const tracker = document.getElementById("workoutSetsTracker");
-      tracker.innerHTML = "";
+      if (!workoutSetsTracker || !workoutSetsTarget) return;
+      workoutSetsTracker.innerHTML = "";
 
-      const targetDiv = document.getElementById("workoutSetsTarget");
       const t = translations[currentLang];
-      targetDiv.innerText = currentLang === 'vi'
+      workoutSetsTarget.innerText = currentLang === 'vi'
         ? `${setsCount} Hiệp x ${repsCount} Lần`
         : `${setsCount} Sets x ${repsCount} Reps`;
 
@@ -3381,7 +3497,7 @@
           saveTimerState();
         });
 
-        tracker.appendChild(btn);
+        workoutSetsTracker.appendChild(btn);
       }
     }
 
@@ -3584,9 +3700,8 @@
     }
 
     function renderWorkoutsSettingsList() {
-      const container = document.getElementById("workoutsSettingsList");
-      if (!container) return;
-      container.innerHTML = "";
+      if (!workoutsSettingsList) return;
+      workoutsSettingsList.innerHTML = "";
       const lang = currentLang;
       const t = translations[lang];
 
@@ -3625,18 +3740,18 @@
           </div>
         `;
 
-        container.appendChild(item);
+        workoutsSettingsList.appendChild(item);
       });
 
       // Add event listeners to dynamic edit/delete buttons
-      container.querySelectorAll(".btn-edit-workout").forEach(btn => {
+      workoutsSettingsList.querySelectorAll(".btn-edit-workout").forEach(btn => {
         btn.addEventListener("click", (e) => {
           const id = btn.getAttribute("data-id");
           openWorkoutDialog(id);
         });
       });
 
-      container.querySelectorAll(".btn-delete-workout").forEach(btn => {
+      workoutsSettingsList.querySelectorAll(".btn-delete-workout").forEach(btn => {
         btn.addEventListener("click", (e) => {
           const id = btn.getAttribute("data-id");
           deleteWorkout(id);
@@ -3646,14 +3761,6 @@
 
     function openWorkoutDialog(id = null) {
       const t = translations[currentLang];
-      const workoutDialog = document.getElementById("workoutDialog");
-      const editWorkoutId = document.getElementById("editWorkoutId");
-      const workoutTitleEn = document.getElementById("workoutTitleEn");
-      const workoutTitleVi = document.getElementById("workoutTitleVi");
-      const workoutGifUrl = document.getElementById("workoutGifUrl");
-      const workoutSets = document.getElementById("workoutSets");
-      const workoutReps = document.getElementById("workoutReps");
-      const dialogTitle = document.getElementById("dialogTitle");
 
       if (id) {
         const workout = hiitWorkouts.find(w => w.id === id);
@@ -3703,12 +3810,12 @@
 
     function handleWorkoutFormSubmit(e) {
       e.preventDefault();
-      const id = document.getElementById("editWorkoutId").value;
-      const titleEnVal = document.getElementById("workoutTitleEn").value.trim();
-      const titleViVal = document.getElementById("workoutTitleVi").value.trim();
-      const gifVal = document.getElementById("workoutGifUrl").value.trim();
-      const setsVal = Math.max(1, Math.min(10, parseInt(document.getElementById("workoutSets").value, 10) || 3));
-      const repsVal = Math.max(1, Math.min(100, parseInt(document.getElementById("workoutReps").value, 10) || 10));
+      const id = editWorkoutId.value;
+      const titleEnVal = workoutTitleEn.value.trim();
+      const titleViVal = workoutTitleVi.value.trim();
+      const gifVal = workoutGifUrl.value.trim();
+      const setsVal = Math.max(1, Math.min(10, parseInt(workoutSets.value, 10) || 3));
+      const repsVal = Math.max(1, Math.min(100, parseInt(workoutReps.value, 10) || 10));
 
       if (id) {
         // Edit existing
@@ -3741,7 +3848,7 @@
       renderWorkoutsSettingsList();
 
       // Close Dialog
-      document.getElementById("workoutDialog").close();
+      workoutDialog.close();
     }
 
     function handleFolderScanChange(e) {
@@ -3850,7 +3957,7 @@
       const btnCancelDialog = document.getElementById("btnCancelDialog");
       if (btnCancelDialog) {
         btnCancelDialog.addEventListener("click", () => {
-          document.getElementById("workoutDialog").close();
+          workoutDialog.close();
         });
       }
 
@@ -3921,8 +4028,6 @@
           return;
         }
 
-        const workoutDialog = document.getElementById("workoutDialog");
-        const editTimerDialog = document.getElementById("editTimerDialog");
         const isAnyDialogOpen = (workoutDialog && workoutDialog.open) || (editTimerDialog && editTimerDialog.open);
 
         if (e.key === "Escape") {
@@ -3976,37 +4081,37 @@
 
   <!-- Add/Edit Workout Dialog -->
   <dialog id="workoutDialog">
-    <form id="workoutForm" method="dialog" style="display: flex; flex-direction: column; gap: 16px;">
-      <h3 id="dialogTitle" style="font-size: 1.15rem; font-weight: 700; color: var(--accent);">Add Workout</h3>
+    <form id="workoutForm" method="dialog" class="dialog-form">
+      <h3 id="dialogTitle" class="dialog-title">Add Workout</h3>
       <input type="hidden" id="editWorkoutId">
 
-      <div style="display: flex; flex-direction: column; gap: 6px;">
-        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-t="workoutTitleEn">Title (English)</label>
-        <input type="text" id="workoutTitleEn" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); width: 100%; outline: none;">
+      <div class="dialog-field">
+        <label class="dialog-label" data-t="workoutTitleEn">Title (English)</label>
+        <input type="text" id="workoutTitleEn" required class="dialog-input">
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 6px;">
-        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-t="workoutTitleVi">Title (Vietnamese)</label>
-        <input type="text" id="workoutTitleVi" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); width: 100%; outline: none;">
+      <div class="dialog-field">
+        <label class="dialog-label" data-t="workoutTitleVi">Title (Vietnamese)</label>
+        <input type="text" id="workoutTitleVi" required class="dialog-input">
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 6px;">
-        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-t="workoutGifUrl">GIF/Image URL or Path</label>
-        <input type="text" id="workoutGifUrl" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); width: 100%; outline: none;" placeholder="e.g. listWorkoutGif/Jumping jacks interval.webp">
+      <div class="dialog-field">
+        <label class="dialog-label" data-t="workoutGifUrl">GIF/Image URL or Path</label>
+        <input type="text" id="workoutGifUrl" required class="dialog-input" placeholder="e.g. listWorkoutGif/Jumping jacks interval.webp">
       </div>
 
-      <div style="display: flex; gap: 16px;">
-        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-t="workoutSets">Sets</label>
-          <input type="number" id="workoutSets" min="1" max="10" value="3" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); text-align: center; width: 100%; outline: none;">
+      <div class="dialog-row">
+        <div class="dialog-field" style="flex: 1;">
+          <label class="dialog-label" data-t="workoutSets">Sets</label>
+          <input type="number" id="workoutSets" min="1" max="10" value="3" required class="dialog-input" style="text-align: center;">
         </div>
-        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" data-t="workoutReps">Reps</label>
-          <input type="number" id="workoutReps" min="1" max="100" value="15" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); text-align: center; width: 100%; outline: none;">
+        <div class="dialog-field" style="flex: 1;">
+          <label class="dialog-label" data-t="workoutReps">Reps</label>
+          <input type="number" id="workoutReps" min="1" max="100" value="15" required class="dialog-input" style="text-align: center;">
         </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px;">
+      <div class="dialog-actions">
         <button type="button" id="btnCancelDialog" class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="cancel">Cancel</button>
         <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="save">Save</button>
       </div>
@@ -4015,22 +4120,22 @@
 
   <!-- Edit Timer Dialog -->
   <dialog id="editTimerDialog">
-    <form id="editTimerForm" method="dialog" style="display: flex; flex-direction: column; gap: 16px; min-width: 240px;">
-      <h3 id="editTimerTitle" style="font-size: 1.15rem; font-weight: 700; color: var(--accent);" data-t="editTimerTitle">Adjust Remaining Time</h3>
+    <form id="editTimerForm" method="dialog" class="dialog-form" style="min-width: 240px;">
+      <h3 id="editTimerTitle" class="dialog-title" data-t="editTimerTitle">Adjust Remaining Time</h3>
 
-      <div style="display: flex; gap: 12px; justify-content: center; align-items: center; margin: 10px 0;">
-        <div style="display: flex; flex-direction: column; gap: 6px; width: 70px;">
-          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; text-align: center;" data-t="minutes">Minutes</label>
-          <input type="number" id="editTimerMinutes" min="0" max="180" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); text-align: center; font-size: 1.25rem; outline: none;">
+      <div class="dialog-timer-picker">
+        <div class="dialog-timer-col">
+          <label class="dialog-label" style="text-align: center;" data-t="minutes">Minutes</label>
+          <input type="number" id="editTimerMinutes" min="0" max="180" required class="dialog-input dialog-timer-input">
         </div>
         <span style="font-size: 1.5rem; font-weight: 700; margin-top: 18px; color: var(--text-muted);">:</span>
-        <div style="display: flex; flex-direction: column; gap: 6px; width: 70px;">
-          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; text-align: center;" data-t="seconds">Seconds</label>
-          <input type="number" id="editTimerSeconds" min="0" max="59" required style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #ffffff; padding: 10px; border-radius: 8px; font-family: var(--font-family); text-align: center; font-size: 1.25rem; outline: none;">
+        <div class="dialog-timer-col">
+          <label class="dialog-label" style="text-align: center;" data-t="seconds">Seconds</label>
+          <input type="number" id="editTimerSeconds" min="0" max="59" required class="dialog-input dialog-timer-input">
         </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px;">
+      <div class="dialog-actions">
         <button type="button" id="btnCancelEditTimer" class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="cancel">Cancel</button>
         <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="save">Save</button>
       </div>

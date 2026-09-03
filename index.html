@@ -54,6 +54,7 @@
       background: radial-gradient(circle at center, #1c1917 0%, #0c0a09 100%);
       color: var(--text-primary);
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -62,11 +63,12 @@
       transition: background-color 0.5s ease, color 0.5s ease, background 0.5s ease;
     }
 
-    /* Main Container optimized for portrait/mobile viewport */
+    /* Main Container: fluid & responsive with safe-area support */
     .station-container {
       width: 100%;
       max-width: 440px;
       height: 100vh;
+      height: 100dvh;
       max-height: 850px;
       background-color: var(--bg-surface);
       border-radius: 0;
@@ -75,10 +77,10 @@
       flex-direction: column;
       position: relative;
       overflow: hidden;
-      transition: background-color 0.5s ease, border-color 0.5s ease;
+      transition: background-color 0.5s ease, border-color 0.5s ease, max-width 0.3s ease;
     }
 
-    /* Desk phone / tablet card mode for wider screens */
+    /* Tablet & iPad viewport optimization */
     @media (min-width: 441px) {
       body {
         background-color: var(--bg-page);
@@ -87,15 +89,118 @@
       }
       .station-container {
         height: calc(100vh - 40px);
+        height: calc(100dvh - 40px);
+        max-width: 520px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 24px;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
       }
     }
 
+    /* Laptop & Desktop viewport optimization */
+    @media (min-width: 768px) {
+      .station-container {
+        max-width: 600px;
+        max-height: 900px;
+      }
+      .controls-row {
+        gap: 20px;
+      }
+      .btn-primary {
+        padding: 16px 42px;
+      }
+      .stretch-graphic-container {
+        width: 280px;
+        height: 280px;
+      }
+      .dialog {
+        width: 440px;
+      }
+    }
+
+    /* Mobile landscape optimization: prevent vertical overflow */
+    @media (max-height: 560px) and (orientation: landscape) {
+      body {
+        padding: 0;
+      }
+      .station-container {
+        max-width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+        border: none;
+      }
+      header {
+        padding: 8px 16px;
+      }
+      .quick-check-panel {
+        margin: 2px auto;
+        padding: 4px 12px;
+        gap: 12px;
+      }
+      .view-content {
+        padding: 10px 16px;
+      }
+      .progress-container {
+        width: 180px;
+        height: 180px;
+        margin-bottom: 8px;
+      }
+      .time-digits {
+        font-size: 2.4rem;
+      }
+      .growth-wrapper {
+        transform: translateY(-24px);
+      }
+      .timer-display {
+        transform: translateY(16px);
+      }
+      .controls-row {
+        margin-top: 4px;
+        margin-bottom: 8px;
+        gap: 10px;
+      }
+      .btn {
+        padding: 8px 18px;
+        font-size: 0.85rem;
+      }
+      .btn-primary {
+        padding: 10px 24px;
+        font-size: 0.9rem;
+      }
+      .btn-icon {
+        width: 40px;
+        height: 40px;
+      }
+      nav {
+        padding-bottom: 2px;
+      }
+      .nav-tab {
+        padding: 6px 0 8px 0;
+        font-size: 0.7rem;
+      }
+      .nav-tab svg {
+        width: 18px;
+        height: 18px;
+      }
+      .stretch-graphic-container {
+        width: 140px;
+        height: 140px;
+      }
+      .stretch-card {
+        padding: 10px;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .shortcut-hint {
+        display: none;
+      }
+    }
+
     /* Header Bar */
     header {
-      padding: 16px 20px;
+      padding: max(16px, env(safe-area-inset-top, 16px)) max(20px, env(safe-area-inset-right, 20px)) 16px max(20px, env(safe-area-inset-left, 20px));
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -136,14 +241,17 @@
     }
 
     .indicator-icon {
-      width: 38px;
-      height: 38px;
-      padding: 9px;
+      width: 44px;
+      height: 44px;
+      padding: 10px;
       background-color: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border-color);
       border-radius: 50%;
       fill: var(--text-muted);
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -217,12 +325,14 @@
       background-color: rgba(26, 26, 25, 0.85);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
       z-index: 10;
     }
 
     .nav-tab {
       flex: 1;
-      padding: 13px 0 15px 0;
+      min-height: 48px;
+      padding: 10px 0 12px 0;
       background: none;
       border: none;
       border-top: 2px solid transparent;
@@ -234,6 +344,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 4px;
       transition: color 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-top-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease;
     }
@@ -933,11 +1044,16 @@
       border: 1px solid var(--border-color);
       border-radius: 20px;
       color: var(--text-primary);
-      padding: 20px;
+      padding: 24px;
       max-width: 90%;
-      width: 380px;
+      width: 400px;
       margin: auto;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    @media (min-width: 768px) {
+      dialog {
+        width: 440px;
+      }
     }
     dialog::backdrop {
       background: rgba(0, 0, 0, 0.75);

@@ -644,6 +644,29 @@
       pointer-events: none;
     }
 
+    /* ponytail: Hide timer digits uses opacity toggle with peek on hover/tap; upgrade to animated morph if ring numbers requested */
+    .progress-container.hide-timer-digits .timer-display {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    @media (hover: hover) {
+      .progress-container.hide-timer-digits:hover .timer-display {
+        opacity: 0.85;
+        pointer-events: auto;
+      }
+    }
+
+    .progress-container.hide-timer-digits.peek-digits .timer-display {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .progress-container.hide-timer-digits {
+      cursor: pointer;
+    }
+
     .time-digits {
       font-size: 3.6rem;
       font-weight: 750;
@@ -1937,7 +1960,7 @@
         </div>
 
         <div class="timer-section">
-          <div class="progress-container">
+          <div class="progress-container" id="progressContainer">
             <svg class="progress-svg" viewBox="0 0 260 260">
               <circle class="progress-bg-circle" cx="130" cy="130" r="120"></circle>
               <circle class="progress-bar-circle" id="focusProgressBar" cx="130" cy="130" r="120"></circle>
@@ -2135,6 +2158,19 @@
                   <option value="en">English</option>
                   <option value="vi">Tiếng Việt</option>
                 </select>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label" data-t="hideTimerDigits">Hide Timer Digits</span>
+                <span class="setting-desc" data-t="hideTimerDigitsDesc">Show only the progress ring to minimize distraction</span>
+              </div>
+              <div class="setting-control">
+                <label class="switch">
+                  <input type="checkbox" id="checkboxHideTimerDigits">
+                  <span class="slider"></span>
+                </label>
               </div>
             </div>
           </div>
@@ -2399,6 +2435,17 @@
               <span class="pomodoro-input-unit" data-t="unitCycles">cycles</span>
             </div>
           </div>
+
+          <div class="pomodoro-field-box" style="grid-column: span 2; display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;">
+            <label class="pomodoro-field-label" style="margin-bottom: 0; cursor: pointer;" for="pomodoroHideTimerDigits">
+              <span>👁️</span>
+              <span data-t="hideTimerDigits">Hide Timer Digits</span>
+            </label>
+            <label class="switch" style="margin-bottom: 0;">
+              <input type="checkbox" id="pomodoroHideTimerDigits">
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -2422,6 +2469,7 @@
     let cyclesBeforeLongBreak = 4;
     let currentCycleCount = 0; // completed focus sessions in current cycle
     let isLongBreak = false;
+    let hideTimerDigits = false;
     let enableAlerts = true;
     let enableNotifications = true;
     let enableMindfulnessBell = true;
@@ -2490,6 +2538,8 @@
         longBreakDescMsg: "You completed your focus cycle! Take a well-deserved rest.",
         settingLabelLang: "Language / Ngôn ngữ",
         settingDescLang: "Select interface language",
+        hideTimerDigits: "Hide Timer Digits",
+        hideTimerDigitsDesc: "Show only the progress ring to minimize distraction",
         wellnessReminders: "Wellness Reminders",
         mindfulnessBell: "Bell of Mindfulness",
         mindfulnessBellDesc: "Random bell to pause and return to the present moment",
@@ -2611,6 +2661,8 @@
         longBreakDescMsg: "Bạn đã hoàn thành chu kỳ tập trung! Hãy nghỉ ngơi thật thoải mái.",
         settingLabelLang: "Language / Ngôn ngữ",
         settingDescLang: "Chọn ngôn ngữ hiển thị",
+        hideTimerDigits: "Ẩn số đếm thời gian",
+        hideTimerDigitsDesc: "Chỉ hiển thị vòng thời gian để tránh sao nhãng",
         wellnessReminders: "Nhắc nhở sức khỏe",
         mindfulnessBell: "Chuông chánh niệm ngẫu nhiên",
         mindfulnessBellDesc: "Phát chuông ngẫu nhiên khi mở ứng dụng để dừng lại và an trú trong hiện tại",
@@ -2883,6 +2935,7 @@
     // DOM Elements
     const brandTitle = document.getElementById("brandTitle");
     const stationContainer = document.getElementById("stationContainer");
+    const progressContainer = document.getElementById("progressContainer");
     const timerDigits = document.getElementById("timerDigits");
     const timerPhaseLabel = document.getElementById("timerPhaseLabel");
     const focusProgressBar = document.getElementById("focusProgressBar");
@@ -2990,6 +3043,8 @@
     const pomodoroBreakInput = document.getElementById("pomodoroBreakInput");
     const pomodoroLongBreakInput = document.getElementById("pomodoroLongBreakInput");
     const pomodoroCyclesInput = document.getElementById("pomodoroCyclesInput");
+    const checkboxHideTimerDigits = document.getElementById("checkboxHideTimerDigits");
+    const pomodoroHideTimerDigits = document.getElementById("pomodoroHideTimerDigits");
     const pomodoroCycleChips = document.getElementById("pomodoroCycleChips");
     const pomodoroCurrentStatusText = document.getElementById("pomodoroCurrentStatusText");
     const btnResetCycle = document.getElementById("btnResetCycle");
@@ -3059,6 +3114,18 @@
       window.addEventListener("beforeunload", saveTimerState);
     }
 
+    function updateHideTimerDigitsUI() {
+      if (progressContainer) {
+        if (hideTimerDigits) {
+          progressContainer.classList.add("hide-timer-digits");
+        } else {
+          progressContainer.classList.remove("hide-timer-digits", "peek-digits");
+        }
+      }
+      if (checkboxHideTimerDigits) checkboxHideTimerDigits.checked = !!hideTimerDigits;
+      if (pomodoroHideTimerDigits) pomodoroHideTimerDigits.checked = !!hideTimerDigits;
+    }
+
     function loadSettings() {
       const storedFocus = localStorage.getItem("focusMinutes");
       const storedBreak = localStorage.getItem("breakMinutes");
@@ -3071,6 +3138,7 @@
       const storedMax = localStorage.getItem("mindfulnessMaxMinutes");
       const storedLang = localStorage.getItem("currentLang");
       const storedSound = localStorage.getItem("soundEnabled");
+      const storedHideTimer = localStorage.getItem("hideTimerDigits");
 
       if (storedFocus) focusMinutes = parseInt(storedFocus, 10);
       if (storedBreak) breakMinutes = parseInt(storedBreak, 10);
@@ -3083,6 +3151,8 @@
       if (storedMax) mindfulnessMaxMinutes = Math.max(mindfulnessMinMinutes, parseInt(storedMax, 10) || 45);
       if (storedLang) currentLang = storedLang;
       if (storedSound !== null) soundEnabled = storedSound === "true";
+      if (storedHideTimer !== null) hideTimerDigits = storedHideTimer === "true";
+      else hideTimerDigits = false;
       updateSoundUI();
 
       // Load Workouts List (Dynamic)
@@ -3127,6 +3197,7 @@
       if (inputMindfulnessMin) inputMindfulnessMin.value = mindfulnessMinMinutes;
       if (inputMindfulnessMax) inputMindfulnessMax.value = mindfulnessMaxMinutes;
       selectLang.value = currentLang;
+      updateHideTimerDigitsUI();
 
       // Render the dynamic settings list of workouts
       if (typeof renderWorkoutsSettingsList === "function") {
@@ -3141,6 +3212,11 @@
       cyclesBeforeLongBreak = Math.max(1, Math.min(12, parseInt(inputCyclesBeforeLongBreak.value, 10) || 4));
       enableNotifications = checkboxNotifications.checked;
       enableAlerts = checkboxAlerts.checked;
+      if (checkboxHideTimerDigits) {
+        hideTimerDigits = checkboxHideTimerDigits.checked;
+      }
+      localStorage.setItem("hideTimerDigits", hideTimerDigits);
+      updateHideTimerDigitsUI();
       if (checkboxMindfulnessBell) {
         const prevBell = enableMindfulnessBell;
         enableMindfulnessBell = checkboxMindfulnessBell.checked;
@@ -3174,7 +3250,7 @@
       if ((prevDebug !== isDebugMode || intervalChanged) && enableMindfulnessBell) {
         scheduleMindfulnessBell();
       }
-      currentLang = selectLang.value;
+      currentLang = (selectLang && selectLang.value) || currentLang || 'vi';
 
       // If user toggled notifications on, request permission proactively
       if (enableNotifications && "Notification" in window && Notification.permission === "default") {
@@ -3333,8 +3409,8 @@
     // TRANSLATIONS ENGINE
     // ----------------------------------------------------
     function updateUIStrings() {
-      const lang = currentLang;
-      const t = translations[lang];
+      const lang = currentLang || 'vi';
+      const t = translations[lang] || translations['vi'];
 
       // Update elements with data-t attribute
       document.querySelectorAll("[data-t]").forEach(el => {
@@ -3739,6 +3815,7 @@
       if (bIn) bIn.value = breakMinutes;
       if (lbIn) lbIn.value = longBreakMinutes;
       if (cIn) cIn.value = cyclesBeforeLongBreak;
+      if (pomodoroHideTimerDigits) pomodoroHideTimerDigits.checked = !!hideTimerDigits;
 
       renderPomodoroCycleChips();
 
@@ -3777,6 +3854,12 @@
       localStorage.setItem("breakMinutes", breakMinutes);
       localStorage.setItem("longBreakMinutes", longBreakMinutes);
       localStorage.setItem("cyclesBeforeLongBreak", cyclesBeforeLongBreak);
+
+      if (pomodoroHideTimerDigits) {
+        hideTimerDigits = pomodoroHideTimerDigits.checked;
+        localStorage.setItem("hideTimerDigits", hideTimerDigits);
+        updateHideTimerDigitsUI();
+      }
 
       saveTimerState();
       updateCycleBadgeUI();
@@ -5191,7 +5274,7 @@
 
       // Auto-save settings on change
       [inputFocusTime, inputBreakTime, inputLongBreakTime, inputCyclesBeforeLongBreak,
-       checkboxNotifications, checkboxAlerts, checkboxMindfulnessBell, inputMindfulnessMin, inputMindfulnessMax, checkboxDebug, selectLang].forEach(el => {
+       checkboxNotifications, checkboxAlerts, checkboxMindfulnessBell, inputMindfulnessMin, inputMindfulnessMax, checkboxDebug, selectLang, checkboxHideTimerDigits].forEach(el => {
         if (el) {
           el.addEventListener("change", () => saveSettings(false));
         }
@@ -5255,6 +5338,22 @@
       if (timerDigits) {
         timerDigits.style.cursor = "pointer";
         timerDigits.addEventListener("click", openEditTimerDialog);
+      }
+
+      if (progressContainer) {
+        let peekTimeout = null;
+        progressContainer.addEventListener("click", (e) => {
+          if (!hideTimerDigits) return;
+          // If clicked directly on the edit button or its SVG, let that proceed
+          if (e.target && (e.target.closest("#btnEditTimer") || e.target.closest("#timerDigits"))) {
+            return;
+          }
+          progressContainer.classList.add("peek-digits");
+          clearTimeout(peekTimeout);
+          peekTimeout = setTimeout(() => {
+            progressContainer.classList.remove("peek-digits");
+          }, 2500);
+        });
       }
 
       const btnEditBreakTimer = document.getElementById("btnEditBreakTimer");

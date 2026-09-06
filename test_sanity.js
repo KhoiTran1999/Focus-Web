@@ -626,6 +626,61 @@ function runSanityCheck() {
     }
 
     console.log('✅ Success: Pomodoro Settings & Progress Modal tests passed.');
+
+    // Test Hide Timer Digits Feature (Option ẩn bộ đếm thời gian)
+    console.log('Running test for Hide Timer Digits option & UI...');
+    if (!content.includes('id="checkboxHideTimerDigits"') || !content.includes('id="pomodoroHideTimerDigits"')) {
+      throw new Error('checkboxHideTimerDigits or pomodoroHideTimerDigits switch is missing in index.html!');
+    }
+    if (!content.includes('.progress-container.hide-timer-digits')) {
+      throw new Error('CSS rule .progress-container.hide-timer-digits is missing in index.html!');
+    }
+    const updateHideTimerDigitsUI = context.updateHideTimerDigitsUI;
+    if (typeof updateHideTimerDigitsUI !== 'function') {
+      throw new Error('updateHideTimerDigitsUI is not defined in context!');
+    }
+
+    // Verify translations exist
+    const tr = vm.runInContext('translations', context);
+    if (!tr.en.hideTimerDigits || !tr.vi.hideTimerDigits) {
+      throw new Error('Translations missing for hideTimerDigits in en or vi!');
+    }
+
+    // Test enabling hideTimerDigits
+    const progressEl = mockWindow.document.getElementById('progressContainer');
+    let addedClasses = [];
+    let removedClasses = [];
+    progressEl.classList = {
+      add: (...cls) => addedClasses.push(...cls),
+      remove: (...cls) => removedClasses.push(...cls),
+      contains: (cls) => addedClasses.includes(cls)
+    };
+
+    vm.runInContext('hideTimerDigits = true;', context);
+    updateHideTimerDigitsUI();
+    if (!addedClasses.includes('hide-timer-digits')) {
+      throw new Error('updateHideTimerDigitsUI did not add hide-timer-digits class to progressContainer!');
+    }
+
+    // Test saving settings with hideTimerDigits
+    const saveSettings = context.saveSettings;
+    const chkHide = mockWindow.document.getElementById('checkboxHideTimerDigits');
+    chkHide.checked = true;
+    saveSettings(false);
+    if (storage['hideTimerDigits'] !== 'true') {
+      throw new Error('saveSettings failed to persist hideTimerDigits=true to localStorage!');
+    }
+
+    // Test disabling hideTimerDigits
+    chkHide.checked = false;
+    saveSettings(false);
+    if (storage['hideTimerDigits'] !== 'false') {
+      throw new Error('saveSettings failed to persist hideTimerDigits=false to localStorage!');
+    }
+    if (!removedClasses.includes('hide-timer-digits')) {
+      throw new Error('updateHideTimerDigitsUI did not remove hide-timer-digits class when disabled!');
+    }
+    console.log('✅ Success: Hide Timer Digits option & UI tests passed.');
   } catch (err) {
     console.error('❌ Sanity check failed!');
     console.error(err);

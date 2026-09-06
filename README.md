@@ -14,7 +14,7 @@
 - **Chế độ AMOLED Fullscreen**: Nền đen tuyệt đối tiết kiệm pin và tối ưu hiển thị như một chiếc đồng hồ để bàn.
 
 ### 2. 🧘 Chuông chánh niệm ngẫu nhiên (Mindfulness Bell)
-- Tự động điểm chuông ngẫu nhiên trong khoảng thời gian tập trung hoặc nghỉ dài.
+- Tự động điểm chuông ngẫu nhiên từ khi mở ứng dụng (hoạt động độc lập, không phụ thuộc phiên Pomodoro).
 - Nhắc nhở người dùng tạm dừng vài giây, hít thở sâu, thả lỏng cơ thể.
 - Hỗ trợ thông báo tab nền và âm thanh chuông chân thực.
 

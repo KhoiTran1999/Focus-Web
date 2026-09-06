@@ -96,7 +96,10 @@ function runSanityCheck() {
     }),
     setInterval: () => 1,
     clearInterval: () => {},
-    setTimeout: (cb) => { if (typeof cb === 'function') cb(); return 1; },
+    setTimeout: (cb, ms) => {
+      if (typeof cb === 'function' && (!ms || ms <= 1000)) cb();
+      return Math.floor(Math.random() * 10000) + 1;
+    },
     clearTimeout: () => {},
     requestAnimationFrame: (cb) => { if (typeof cb === 'function') cb(); return 1; },
     cancelAnimationFrame: () => {},
@@ -336,54 +339,46 @@ function runSanityCheck() {
       throw new Error('scheduleMindfulnessBell or triggerMindfulnessBell is not defined!');
     }
 
-    // 1. Focus mode scheduling
-    vm.runInContext('enableMindfulnessBell = true; currentMode = "focus"; focusMinutes = 25;', context);
+    // 1. Web open scheduling (runs regardless of mode or timer status)
+    vm.runInContext('enableMindfulnessBell = true; currentMode = "focus"; timerStatus = "idle"; isDebugMode = false;', context);
     scheduleMindfulnessBell();
-    let target = vm.runInContext('mindfulnessBellTargetTimeLeft', context);
-    let triggered = vm.runInContext('mindfulnessBellTriggeredThisSession', context);
-    if (target === null || target < Math.floor(25 * 60 * 0.15) || target > Math.ceil(25 * 60 * 0.85) || triggered !== false) {
-      throw new Error(`Invalid focus mode mindfulness bell target: ${target}`);
+    let nextTime = vm.runInContext('mindfulnessBellNextTime', context);
+    let timeoutId = vm.runInContext('mindfulnessBellTimeout', context);
+    if (!timeoutId || !nextTime || nextTime < Date.now() + 14 * 60 * 1000 || nextTime > Date.now() + 46 * 60 * 1000) {
+      throw new Error(`Invalid web open mindfulness bell schedule: nextTime=${nextTime}`);
     }
 
-    // 2. Short break mode scheduling (should NOT schedule)
-    vm.runInContext('currentMode = "break"; isLongBreak = false; breakMinutes = 5;', context);
+    // 2. Break mode (still schedules, independent of timer mode)
+    vm.runInContext('currentMode = "break"; isLongBreak = false;', context);
     scheduleMindfulnessBell();
-    target = vm.runInContext('mindfulnessBellTargetTimeLeft', context);
-    if (target !== null) {
-      throw new Error(`Mindfulness bell should not be scheduled during short break, got target=${target}`);
+    nextTime = vm.runInContext('mindfulnessBellNextTime', context);
+    if (!nextTime) {
+      throw new Error('Mindfulness bell should schedule during break mode as well');
     }
 
-    // 3. Long break mode scheduling (SHOULD schedule)
-    vm.runInContext('currentMode = "break"; isLongBreak = true; longBreakMinutes = 15;', context);
+    // 3. Debug mode scheduling (15s - 45s)
+    vm.runInContext('isDebugMode = true;', context);
     scheduleMindfulnessBell();
-    target = vm.runInContext('mindfulnessBellTargetTimeLeft', context);
-    if (target === null || target < Math.floor(15 * 60 * 0.15) || target > Math.ceil(15 * 60 * 0.85)) {
-      throw new Error(`Invalid long break mindfulness bell target: ${target}`);
+    nextTime = vm.runInContext('mindfulnessBellNextTime', context);
+    if (!nextTime || nextTime < Date.now() + 14 * 1000 || nextTime > Date.now() + 46 * 1000) {
+      throw new Error(`Invalid debug mode mindfulness bell target: nextTime=${nextTime}`);
     }
 
-    // 4. Disabled setting (should NOT schedule)
+    // 4. Disabled setting (should cancel and NOT schedule)
     vm.runInContext('enableMindfulnessBell = false;', context);
     scheduleMindfulnessBell();
-    target = vm.runInContext('mindfulnessBellTargetTimeLeft', context);
-    if (target !== null) {
+    nextTime = vm.runInContext('mindfulnessBellNextTime', context);
+    timeoutId = vm.runInContext('mindfulnessBellTimeout', context);
+    if (nextTime !== null || timeoutId !== null) {
       throw new Error('Mindfulness bell should not schedule when enableMindfulnessBell = false');
     }
 
-    // 5. Trigger during timerTick
-    vm.runInContext('enableMindfulnessBell = true; mindfulnessBellTriggeredThisSession = false; mindfulnessBellTargetTimeLeft = 500; timeLeft = 510; isDebugMode = false;', context);
-    const timerTick = context.timerTick;
-    vm.runInContext('lastTickTime = Date.now() - 1000;', context);
-    timerTick();
-    triggered = vm.runInContext('mindfulnessBellTriggeredThisSession', context);
-    if (triggered !== false) {
-      throw new Error('Mindfulness bell triggered prematurely!');
-    }
-
-    vm.runInContext('timeLeft = 500; lastTickTime = Date.now() - 2000;', context);
-    timerTick();
-    triggered = vm.runInContext('mindfulnessBellTriggeredThisSession', context);
-    if (triggered !== true) {
-      throw new Error('Mindfulness bell failed to trigger when timeLeft <= target!');
+    // 5. Custom interval scheduling (e.g. 5m to 10m)
+    vm.runInContext('enableMindfulnessBell = true; isDebugMode = false; mindfulnessMinMinutes = 5; mindfulnessMaxMinutes = 10;', context);
+    scheduleMindfulnessBell();
+    nextTime = vm.runInContext('mindfulnessBellNextTime', context);
+    if (!nextTime || nextTime < Date.now() + 4.9 * 60 * 1000 || nextTime > Date.now() + 10.1 * 60 * 1000) {
+      throw new Error(`Invalid custom interval mindfulness bell schedule: nextTime=${nextTime}`);
     }
     console.log('✅ Success: Random Mindfulness Bell tests passed.');
 

@@ -1930,7 +1930,7 @@
             <div class="setting-item">
               <div class="setting-info">
                 <span class="setting-label" data-t="mindfulnessBell">Bell of Mindfulness</span>
-                <span class="setting-desc" data-t="mindfulnessBellDesc">Random bell during focus & long break to pause and return to the present moment</span>
+                <span class="setting-desc" data-t="mindfulnessBellDesc">Random bell to pause and return to the present moment</span>
               </div>
               <div class="setting-control" style="display: flex; align-items: center; gap: 8px;">
                 <button type="button" class="btn btn-secondary" id="btnTestMindfulnessBell" style="padding: 6px 10px; font-size: 0.78rem; white-space: nowrap;" data-t="testBell">Test Bell</button>
@@ -1938,6 +1938,18 @@
                   <input type="checkbox" id="checkboxMindfulnessBell" checked>
                   <span class="slider"></span>
                 </label>
+              </div>
+            </div>
+
+            <div class="setting-item" id="mindfulnessIntervalRow">
+              <div class="setting-info">
+                <span class="setting-label" data-t="mindfulnessInterval">Bell Interval Range</span>
+                <span class="setting-desc" data-t="mindfulnessIntervalDesc">Min and max minutes between random bells</span>
+              </div>
+              <div class="setting-control" style="display: flex; align-items: center; gap: 6px;">
+                <input type="number" id="inputMindfulnessMin" min="1" max="180" value="15" style="width: 60px; text-align: center;" aria-label="Minimum minutes">
+                <span style="opacity: 0.6;">–</span>
+                <input type="number" id="inputMindfulnessMax" min="1" max="240" value="45" style="width: 60px; text-align: center;" aria-label="Maximum minutes">
               </div>
             </div>
 
@@ -2011,8 +2023,10 @@
     let enableAlerts = true;
     let enableNotifications = true;
     let enableMindfulnessBell = true;
-    let mindfulnessBellTargetTimeLeft = null;
-    let mindfulnessBellTriggeredThisSession = false;
+    let mindfulnessMinMinutes = 15;
+    let mindfulnessMaxMinutes = 45;
+    let mindfulnessBellTimeout = null;
+    let mindfulnessBellNextTime = null;
     let isDebugMode = false;
     let currentLang = 'vi'; // Default to Vietnamese
 
@@ -2082,7 +2096,9 @@
         settingDescLang: "Select interface language",
         wellnessReminders: "Wellness Reminders",
         mindfulnessBell: "Bell of Mindfulness",
-        mindfulnessBellDesc: "Random bell during focus & long break to pause and return to the present moment",
+        mindfulnessBellDesc: "Random bell to pause and return to the present moment",
+        mindfulnessInterval: "Bell Interval Range",
+        mindfulnessIntervalDesc: "Min and max minutes between random bells",
         mindfulnessBellToastTitle: "🔔 Bell of Mindfulness",
         mindfulnessBellToastDesc: "Stop all actions, speech, and thoughts. Breathe deeply and rest in the present moment.",
         mindfulnessBellTabAlert: "🔔 [PAUSE & BREATHE] Bell of Mindfulness",
@@ -2192,7 +2208,9 @@
         settingDescLang: "Chọn ngôn ngữ hiển thị",
         wellnessReminders: "Nhắc nhở sức khỏe",
         mindfulnessBell: "Chuông chánh niệm ngẫu nhiên",
-        mindfulnessBellDesc: "Phát chuông bất ngờ trong phiên tập trung & nghỉ dài để dừng lại và an trú trong hiện tại",
+        mindfulnessBellDesc: "Phát chuông ngẫu nhiên khi mở ứng dụng để dừng lại và an trú trong hiện tại",
+        mindfulnessInterval: "Khoảng cách chuông ngẫu nhiên",
+        mindfulnessIntervalDesc: "Số phút tối thiểu và tối đa giữa các lần điểm chuông",
         mindfulnessBellToastTitle: "chuông chánh niệm",
         mindfulnessBellToastDesc: "Dừng lại mọi hành động, lời nói và suy nghĩ. Thở sâu và trở về an trú trong hiện tại.",
         mindfulnessBellTabAlert: "[DỪNG LẠI & AN TRÚ] Chuông chánh niệm",
@@ -2586,6 +2604,8 @@
     const checkboxNotifications = document.getElementById("checkboxNotifications");
     const checkboxAlerts = document.getElementById("checkboxAlerts");
     const checkboxMindfulnessBell = document.getElementById("checkboxMindfulnessBell");
+    const inputMindfulnessMin = document.getElementById("inputMindfulnessMin");
+    const inputMindfulnessMax = document.getElementById("inputMindfulnessMax");
     const btnTestMindfulnessBell = document.getElementById("btnTestMindfulnessBell");
     const checkboxDebug = document.getElementById("checkboxDebug");
     const btnSaveSettings = document.getElementById("btnSaveSettings");
@@ -2650,6 +2670,11 @@
       updateUIStrings();
       updateCycleBadgeUI();
 
+      // Start random mindfulness bell from the moment the web app is opened
+      if (enableMindfulnessBell) {
+        scheduleMindfulnessBell();
+      }
+
       // Register Service Worker for offline PWA capability
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
@@ -2681,6 +2706,8 @@
       const storedNotifications = localStorage.getItem("enableNotifications");
       const storedAlerts = localStorage.getItem("enableAlerts");
       const storedMindfulnessBell = localStorage.getItem("enableMindfulnessBell");
+      const storedMin = localStorage.getItem("mindfulnessMinMinutes");
+      const storedMax = localStorage.getItem("mindfulnessMaxMinutes");
       const storedLang = localStorage.getItem("currentLang");
       const storedSound = localStorage.getItem("soundEnabled");
 
@@ -2691,6 +2718,8 @@
       if (storedNotifications !== null) enableNotifications = storedNotifications === "true";
       if (storedAlerts !== null) enableAlerts = storedAlerts === "true";
       if (storedMindfulnessBell !== null) enableMindfulnessBell = storedMindfulnessBell === "true";
+      if (storedMin) mindfulnessMinMinutes = Math.max(1, parseInt(storedMin, 10) || 15);
+      if (storedMax) mindfulnessMaxMinutes = Math.max(mindfulnessMinMinutes, parseInt(storedMax, 10) || 45);
       if (storedLang) currentLang = storedLang;
       if (storedSound !== null) soundEnabled = storedSound === "true";
       updateSoundUI();
@@ -2757,6 +2786,8 @@
       checkboxNotifications.checked = enableNotifications;
       checkboxAlerts.checked = enableAlerts;
       if (checkboxMindfulnessBell) checkboxMindfulnessBell.checked = enableMindfulnessBell;
+      if (inputMindfulnessMin) inputMindfulnessMin.value = mindfulnessMinMinutes;
+      if (inputMindfulnessMax) inputMindfulnessMax.value = mindfulnessMaxMinutes;
       selectLang.value = currentLang;
 
       // Render the dynamic settings list of workouts
@@ -2775,13 +2806,36 @@
       if (checkboxMindfulnessBell) {
         const prevBell = enableMindfulnessBell;
         enableMindfulnessBell = checkboxMindfulnessBell.checked;
-        if (!prevBell && enableMindfulnessBell && timerStatus === 'running') {
+        if (!enableMindfulnessBell) {
+          if (mindfulnessBellTimeout) {
+            clearTimeout(mindfulnessBellTimeout);
+            mindfulnessBellTimeout = null;
+          }
+          mindfulnessBellNextTime = null;
+        } else if (!prevBell && enableMindfulnessBell) {
           scheduleMindfulnessBell();
-        } else if (!enableMindfulnessBell) {
-          mindfulnessBellTargetTimeLeft = null;
         }
       }
+
+      let intervalChanged = false;
+      if (inputMindfulnessMin && inputMindfulnessMax) {
+        let minVal = Math.max(1, Math.min(180, parseInt(inputMindfulnessMin.value, 10) || 15));
+        let maxVal = Math.max(1, Math.min(240, parseInt(inputMindfulnessMax.value, 10) || 45));
+        if (minVal > maxVal) [minVal, maxVal] = [maxVal, minVal];
+        intervalChanged = (minVal !== mindfulnessMinMinutes || maxVal !== mindfulnessMaxMinutes);
+        mindfulnessMinMinutes = minVal;
+        mindfulnessMaxMinutes = maxVal;
+        inputMindfulnessMin.value = minVal;
+        inputMindfulnessMax.value = maxVal;
+        localStorage.setItem("mindfulnessMinMinutes", mindfulnessMinMinutes);
+        localStorage.setItem("mindfulnessMaxMinutes", mindfulnessMaxMinutes);
+      }
+
+      const prevDebug = isDebugMode;
       isDebugMode = checkboxDebug.checked;
+      if ((prevDebug !== isDebugMode || intervalChanged) && enableMindfulnessBell) {
+        scheduleMindfulnessBell();
+      }
       currentLang = selectLang.value;
 
       // If user toggled notifications on, request permission proactively
@@ -3380,7 +3434,6 @@
         updateTimerDisplay();
         initHiitSequence();
       }
-      scheduleMindfulnessBell();
       updateCycleBadgeUI();
       saveTimerState();
     }
@@ -3441,12 +3494,6 @@
           if (enableAlerts && currReminderCount > prevReminderCount && currReminderCount > 0) {
             triggerPostureHydrationAlert();
           }
-        }
-
-        // Random mindfulness bell trigger during focus and long break
-        if (enableMindfulnessBell && !mindfulnessBellTriggeredThisSession && mindfulnessBellTargetTimeLeft !== null && timeLeft <= mindfulnessBellTargetTimeLeft) {
-          mindfulnessBellTriggeredThisSession = true;
-          triggerMindfulnessBell();
         }
 
         updateTimerDisplay();
@@ -3959,28 +4006,25 @@
     }
 
     function scheduleMindfulnessBell() {
-      mindfulnessBellTriggeredThisSession = false;
+      if (mindfulnessBellTimeout) {
+        clearTimeout(mindfulnessBellTimeout);
+        mindfulnessBellTimeout = null;
+      }
       if (!enableMindfulnessBell) {
-        mindfulnessBellTargetTimeLeft = null;
+        mindfulnessBellNextTime = null;
         return;
       }
 
-      // Bell only rings during focus session and long break
-      const isEligible = currentMode === 'focus' || (currentMode === 'break' && isLongBreak);
-      if (!isEligible) {
-        mindfulnessBellTargetTimeLeft = null;
-        return;
-      }
+      // ponytail: user-configurable interval range (mindfulnessMinMinutes to mindfulnessMaxMinutes); upgrade to schedule presets (work hours only) if requested
+      const minSec = isDebugMode ? Math.max(1, Math.round(mindfulnessMinMinutes)) : Math.round(mindfulnessMinMinutes * 60);
+      const maxSec = isDebugMode ? Math.max(minSec + 1, Math.round(mindfulnessMaxMinutes)) : Math.round(mindfulnessMaxMinutes * 60);
+      const delaySec = Math.round(minSec + Math.random() * Math.max(0, maxSec - minSec));
+      const delayMs = delaySec * 1000;
 
-      const totalSec = (currentMode === 'focus') ? (focusMinutes * 60) : (longBreakMinutes * 60);
-      if (totalSec <= 0) {
-        mindfulnessBellTargetTimeLeft = null;
-        return;
-      }
-
-      // Random target between 15% and 85% of total session duration
-      const randomRatio = 0.15 + Math.random() * 0.70;
-      mindfulnessBellTargetTimeLeft = Math.max(1, Math.round(totalSec * randomRatio));
+      mindfulnessBellNextTime = Date.now() + delayMs;
+      mindfulnessBellTimeout = setTimeout(() => {
+        triggerMindfulnessBell();
+      }, delayMs);
     }
 
     function dismissMindfulnessModal() {
@@ -4042,6 +4086,11 @@
           t.mindfulnessBellToastDesc || "Dừng lại mọi hành động, lời nói và suy nghĩ. Thở sâu và trở về an trú trong hiện tại.",
           { tag: 'mindfulness-bell', requireInteraction: true } // Stays until user manually clicks/dismisses
         );
+      }
+
+      // Schedule next random bell unless this was an explicit manual test
+      if (!isTest && enableMindfulnessBell) {
+        scheduleMindfulnessBell();
       }
     }
 

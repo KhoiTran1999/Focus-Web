@@ -380,6 +380,28 @@ function runSanityCheck() {
     if (!nextTime || nextTime < Date.now() + 4.9 * 60 * 1000 || nextTime > Date.now() + 10.1 * 60 * 1000) {
       throw new Error(`Invalid custom interval mindfulness bell schedule: nextTime=${nextTime}`);
     }
+
+    // 6. Monte Carlo distribution test (1000 samples within exact [5m, 10m] bounds)
+    for (let i = 0; i < 1000; i++) {
+      scheduleMindfulnessBell();
+      const t = vm.runInContext('mindfulnessBellNextTime', context);
+      const delay = t - Date.now();
+      if (delay < 5 * 60 * 1000 || delay > 10 * 60 * 1000) {
+        throw new Error(`Out of bounds mindfulness bell delay: ${delay}ms at sample ${i}`);
+      }
+    }
+
+    // 7. Visibility / sleep wake catch-up test
+    let catchUpTriggered = false;
+    context.triggerMindfulnessBell = () => { catchUpTriggered = true; };
+    vm.runInContext('mindfulnessBellNextTime = Date.now() - 1000;', context);
+    mockWindow.document.visibilityState = 'visible';
+    const handleVisibilityChange = context.handleVisibilityChange;
+    if (typeof handleVisibilityChange === 'function') {
+      handleVisibilityChange();
+      if (!catchUpTriggered) throw new Error('handleVisibilityChange failed to catch up elapsed mindfulness bell');
+    }
+    context.triggerMindfulnessBell = triggerMindfulnessBell; // restore
     console.log('✅ Success: Random Mindfulness Bell tests passed.');
 
     console.log('Running test for background mindfulness bell notifications, prominent modal & manual dismissal...');

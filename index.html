@@ -2908,6 +2908,9 @@
       if (wakeLock !== null && document.visibilityState === 'visible') {
         requestWakeLock();
       }
+      if (document.visibilityState === 'visible' && enableMindfulnessBell && mindfulnessBellNextTime && Date.now() >= mindfulnessBellNextTime) {
+        triggerMindfulnessBell();
+      }
     }
 
     // ----------------------------------------------------
@@ -3924,8 +3927,10 @@
       }
 
       // ponytail: user-configurable interval range (mindfulnessMinMinutes to mindfulnessMaxMinutes); upgrade to schedule presets (work hours only) if requested
-      const minSec = isDebugMode ? Math.max(1, Math.round(mindfulnessMinMinutes)) : Math.round(mindfulnessMinMinutes * 60);
-      const maxSec = isDebugMode ? Math.max(minSec + 1, Math.round(mindfulnessMaxMinutes)) : Math.round(mindfulnessMaxMinutes * 60);
+      const safeMin = Math.max(1, Number(mindfulnessMinMinutes) || 15);
+      const safeMax = Math.max(safeMin, Number(mindfulnessMaxMinutes) || 45);
+      const minSec = isDebugMode ? Math.max(1, Math.round(safeMin)) : Math.round(safeMin * 60);
+      const maxSec = isDebugMode ? Math.max(minSec + 1, Math.round(safeMax)) : Math.round(safeMax * 60);
       const delaySec = Math.round(minSec + Math.random() * Math.max(0, maxSec - minSec));
       const delayMs = delaySec * 1000;
 
@@ -4633,7 +4638,7 @@
 
       // Auto-save settings on change
       [inputFocusTime, inputBreakTime, inputLongBreakTime, inputCyclesBeforeLongBreak,
-       checkboxNotifications, checkboxAlerts, checkboxMindfulnessBell, checkboxDebug, selectLang].forEach(el => {
+       checkboxNotifications, checkboxAlerts, checkboxMindfulnessBell, inputMindfulnessMin, inputMindfulnessMax, checkboxDebug, selectLang].forEach(el => {
         if (el) {
           el.addEventListener("change", () => saveSettings(false));
         }

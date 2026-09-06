@@ -194,6 +194,15 @@
       .shortcut-hint {
         display: none;
       }
+      dialog {
+        max-height: 94dvh;
+        max-height: 94vh;
+        padding: 12px 14px;
+      }
+      .pomodoro-card {
+        padding: 8px 10px;
+        gap: 6px;
+      }
     }
 
     /* Mobile portrait optimization: prevent icon squishing and cramped controls */
@@ -264,6 +273,62 @@
         width: 20px;
         height: 20px;
       }
+
+      /* Mobile Phone Dialog Ergonomics */
+      dialog {
+        padding: 16px 14px;
+        border-radius: 16px;
+        max-width: calc(100vw - 20px);
+        max-height: calc(100dvh - 24px);
+      }
+      #pomodoroDialog {
+        padding: 16px 14px;
+      }
+      .pomodoro-card {
+        padding: 10px 10px;
+        gap: 8px;
+        border-radius: 12px;
+      }
+      .pomodoro-card-title {
+        font-size: 0.68rem;
+      }
+      .pomodoro-status-pill {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+      }
+      .cycle-chip {
+        padding: 6px 6px;
+        font-size: 0.75rem;
+        min-width: 38px;
+        min-height: 40px;
+      }
+      .pomodoro-presets-row {
+        gap: 3px;
+      }
+      .pomodoro-preset-chip {
+        padding: 3px 6px;
+        font-size: 0.68rem;
+        min-height: 28px;
+      }
+      .pomodoro-field-box {
+        padding: 6px 8px;
+        gap: 2px;
+      }
+      .pomodoro-field-label {
+        font-size: 0.68rem;
+      }
+      .pomodoro-input-wrap input {
+        font-size: 16px !important; /* Prevents auto-zoom in iOS Safari */
+        padding: 5px 4px;
+      }
+      .pomodoro-input-unit {
+        font-size: 0.68rem;
+      }
+      .dialog-actions .btn {
+        min-height: 42px;
+        flex: 1;
+        padding: 10px 14px;
+      }
     }
 
     @media (max-width: 360px) {
@@ -279,6 +344,25 @@
       #btnStartPause {
         padding: 10px 14px;
         font-size: 0.84rem;
+      }
+      dialog {
+        padding: 12px 10px;
+        max-width: calc(100vw - 12px);
+      }
+      #pomodoroDialog {
+        padding: 12px 10px;
+      }
+      .cycle-chip {
+        min-width: 34px;
+        padding: 5px 4px;
+        font-size: 0.72rem;
+      }
+      .pomodoro-preset-chip {
+        padding: 2px 5px;
+        font-size: 0.65rem;
+      }
+      .pomodoro-card {
+        padding: 8px 8px;
       }
     }
 
@@ -1338,15 +1422,39 @@
       border: 1px solid var(--border-color);
       border-radius: 20px;
       color: var(--text-primary);
-      padding: 24px;
-      max-width: 90%;
-      width: 400px;
+      padding: 22px 24px;
+      max-width: min(450px, calc(100vw - 28px));
+      width: 100%;
       margin: auto;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 16px 45px rgba(0,0,0,0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      max-height: calc(100dvh - 36px);
+      max-height: calc(100vh - 36px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      box-sizing: border-box;
+    }
+    dialog::-webkit-scrollbar {
+      width: 4px;
+    }
+    dialog::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    dialog::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 9999px;
     }
     @media (min-width: 768px) {
       dialog {
-        width: 440px;
+        max-width: 480px;
+        padding: 24px 28px;
+        border-radius: 22px;
+      }
+    }
+    @media (min-width: 1024px) {
+      dialog {
+        max-width: 480px;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.07);
       }
     }
     dialog::backdrop {
@@ -1545,12 +1653,194 @@
       height: 28px;
       box-sizing: border-box;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      user-select: none;
+    }
+    .cycle-badge:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--accent);
+      transform: scale(1.05);
+      box-shadow: 0 0 8px var(--accent-muted);
+    }
+    .cycle-badge:active {
+      transform: scale(0.96);
     }
     .cycle-badge.long-break {
       color: var(--status-good);
       background: rgba(12, 163, 12, 0.15);
       border-color: rgba(12, 163, 12, 0.35);
       box-shadow: 0 0 10px rgba(12, 163, 12, 0.2);
+    }
+    .cycle-badge.long-break:hover {
+      background: rgba(12, 163, 12, 0.25);
+      border-color: var(--status-good);
+      box-shadow: 0 0 12px rgba(12, 163, 12, 0.35);
+    }
+
+    /* Pomodoro Dialog Cards & Ergonomics */
+    .pomodoro-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pomodoro-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .pomodoro-card-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .pomodoro-status-pill {
+      font-size: 0.76rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      background: var(--accent-muted);
+      color: var(--accent);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      letter-spacing: 0.02em;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .pomodoro-status-pill.long-break {
+      background: rgba(12, 163, 12, 0.15);
+      color: var(--status-good);
+      border-color: rgba(12, 163, 12, 0.3);
+      box-shadow: 0 0 10px rgba(12, 163, 12, 0.18);
+    }
+    .pomodoro-chips-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .cycle-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary);
+      border-radius: 9px;
+      padding: 7px 11px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex: 1 1 auto;
+      justify-content: center;
+      min-width: 48px;
+      box-sizing: border-box;
+    }
+    .cycle-chip:hover {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: var(--accent);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+    .cycle-chip:active {
+      transform: translateY(0);
+    }
+    .cycle-chip.active {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--accent-muted);
+      font-weight: 700;
+    }
+    .cycle-chip.long-break-chip {
+      flex: 2 1 auto;
+    }
+    .cycle-chip.long-break-chip.active {
+      background: var(--status-good);
+      border-color: var(--status-good);
+      box-shadow: 0 0 12px rgba(12, 163, 12, 0.35);
+    }
+    .pomodoro-presets-row {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    .pomodoro-preset-chip {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 2px 7px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .pomodoro-preset-chip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+    .pomodoro-field-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .pomodoro-field-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .pomodoro-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pomodoro-input-wrap input {
+      flex: 1;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 6px 8px;
+    }
+    .pomodoro-input-unit {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    #btnTopClosePomodoro:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: var(--text-primary) !important;
+    }
+
+    /* Keyboard Focus Ring & Accessibility for Laptop & Desktop */
+    .cycle-chip:focus-visible,
+    .btn:focus-visible,
+    .pomodoro-preset-chip:focus-visible,
+    .dialog-input:focus-visible,
+    #btnTopClosePomodoro:focus-visible,
+    .nav-tab:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     /* Keyboard shortcut helper pill */
@@ -1627,7 +1917,7 @@
 
       <div class="header-indicators">
         <!-- Pomodoro Cycle badge -->
-        <div class="cycle-badge" id="cycleBadge" title="Pomodoro Cycle">
+        <div class="cycle-badge" id="cycleBadge" title="Pomodoro Cycle" role="button" tabindex="0" aria-label="Pomodoro Settings">
           <span>🍅</span>
           <span id="cycleBadgeText">1/4</span>
         </div>
@@ -2030,6 +2320,118 @@
     </form>
   </dialog>
 
+  <!-- ponytail: Pomodoro modal uses native dialog & cards; upgrade to drag-to-reorder sequence if multi-stage intervals requested -->
+  <!-- Pomodoro Settings & Progress Dialog -->
+  <dialog id="pomodoroDialog">
+    <form id="pomodoroForm" method="dialog" class="dialog-form" style="min-width: 260px; gap: 14px;">
+      <!-- Header with title, subtitle & quick dismiss button -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <h3 id="pomodoroDialogTitle" class="dialog-title" style="display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem;">
+            <span>🍅</span>
+            <span data-t="pomodoroSettingsTitle">Pomodoro Settings</span>
+          </h3>
+          <p style="margin: 3px 0 0 0; font-size: 0.76rem; color: var(--text-muted);" data-t="pomodoroSettingsSubtitle">Cycle progress & session durations</p>
+        </div>
+        <button type="button" id="btnTopClosePomodoro" aria-label="Close" style="background: none; border: none; color: var(--text-muted); font-size: 1.25rem; line-height: 1; cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: color 0.15s, background 0.15s;">✕</button>
+      </div>
+
+      <!-- Card 1: Cycle Progress & Set / Reset -->
+      <div class="pomodoro-card">
+        <div class="pomodoro-card-header">
+          <span class="pomodoro-card-title">
+            <span>🔄</span>
+            <span data-t="pomodoroProgress">Cycle Progress</span>
+          </span>
+          <span id="pomodoroCurrentStatusText" class="pomodoro-status-pill">Session 1/4</span>
+        </div>
+        <div class="pomodoro-chips-row" id="pomodoroCycleChips"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 2px;">
+          <button type="button" id="btnResetCycle" class="btn btn-secondary" style="padding: 7px 10px; font-size: 0.78rem; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 5px;">
+            <span>↺</span>
+            <span data-t="resetCycle">Reset Cycle</span>
+          </button>
+          <button type="button" id="btnResetTimerFromPomodoro" class="btn btn-secondary" style="padding: 7px 10px; font-size: 0.78rem; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 5px;">
+            <span>⏹</span>
+            <span data-t="resetTimerBtn">Reset Timer</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 2: Durations Config with Presets -->
+      <div class="pomodoro-card">
+        <div class="pomodoro-card-header">
+          <span class="pomodoro-card-title">
+            <span>⏱️</span>
+            <span data-t="pomodoroDurations">Durations</span>
+          </span>
+          <div class="pomodoro-presets-row">
+            <span style="font-size: 0.68rem; color: var(--text-muted);" data-t="pomodoroPresets">Presets:</span>
+            <button type="button" class="pomodoro-preset-chip" data-focus="25" data-break="5" data-longbreak="15" title="Classic 25/5">25/5</button>
+            <button type="button" class="pomodoro-preset-chip" data-focus="45" data-break="15" data-longbreak="30" title="Desk Station 45/15">45/15</button>
+            <button type="button" class="pomodoro-preset-chip" data-focus="50" data-break="10" data-longbreak="30" title="Deep Work 50/10">50/10</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="pomodoro-field-box">
+            <label class="pomodoro-field-label">
+              <span>🎯</span>
+              <span data-t="focusPeriod">Focus (min)</span>
+            </label>
+            <div class="pomodoro-input-wrap">
+              <input type="number" id="pomodoroFocusInput" min="5" max="180" required class="dialog-input">
+              <span class="pomodoro-input-unit" data-t="unitMin">min</span>
+            </div>
+          </div>
+
+          <div class="pomodoro-field-box">
+            <label class="pomodoro-field-label">
+              <span>☕</span>
+              <span data-t="breakPeriod">Break (min)</span>
+            </label>
+            <div class="pomodoro-input-wrap">
+              <input type="number" id="pomodoroBreakInput" min="1" max="60" required class="dialog-input">
+              <span class="pomodoro-input-unit" data-t="unitMin">min</span>
+            </div>
+          </div>
+
+          <div class="pomodoro-field-box">
+            <label class="pomodoro-field-label">
+              <span>🛋️</span>
+              <span data-t="longBreakPeriod">Long Break (min)</span>
+            </label>
+            <div class="pomodoro-input-wrap">
+              <input type="number" id="pomodoroLongBreakInput" min="5" max="120" required class="dialog-input">
+              <span class="pomodoro-input-unit" data-t="unitMin">min</span>
+            </div>
+          </div>
+
+          <div class="pomodoro-field-box">
+            <label class="pomodoro-field-label">
+              <span>🔄</span>
+              <span data-t="cyclesBeforeLongBreak">Cycles Count</span>
+            </label>
+            <div class="pomodoro-input-wrap">
+              <input type="number" id="pomodoroCyclesInput" min="1" max="12" required class="dialog-input">
+              <span class="pomodoro-input-unit" data-t="unitCycles">cycles</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="dialog-actions" style="margin-top: 2px;">
+        <button type="button" id="btnCancelPomodoro" class="btn btn-secondary" style="padding: 9px 18px; font-size: 0.88rem;">
+          <span data-t="cancel">Cancel</span>
+        </button>
+        <button type="submit" id="btnSavePomodoro" class="btn btn-primary" style="padding: 9px 22px; font-size: 0.88rem;">
+          <span data-t="save">Save</span>
+        </button>
+      </div>
+    </form>
+  </dialog>
+
   <script>
     // State Variables
     let focusMinutes = 45;
@@ -2168,6 +2570,16 @@
         editTimerTitle: "Adjust Remaining Time",
         minutes: "Minutes",
         seconds: "Seconds",
+        pomodoroSettingsTitle: "Pomodoro Settings",
+        pomodoroSettingsSubtitle: "Cycle progress & session durations",
+        pomodoroProgress: "Cycle Progress",
+        pomodoroDurations: "Durations",
+        pomodoroPresets: "Presets:",
+        unitMin: "min",
+        unitCycles: "cycles",
+        resetCycle: "Reset Cycle",
+        resetTimerBtn: "Reset Timer",
+        pomodoroSession: "Session",
         stretchesData: [
           { title: "Neck Tilt", desc: "Tilt your head right, drop left shoulder. Hold 15s. Reverse." },
           { title: "Shoulder Roll", desc: "Roll shoulders backwards in smooth circles. Release tension." },
@@ -2277,6 +2689,16 @@
         editTimerTitle: "Điều chỉnh thời gian còn lại",
         minutes: "Phút",
         seconds: "Giây",
+        pomodoroSettingsTitle: "Cài đặt Pomodoro",
+        pomodoroSettingsSubtitle: "Tiến độ chu kỳ & thời lượng phiên",
+        pomodoroProgress: "Tiến độ chu kỳ",
+        pomodoroDurations: "Thời lượng",
+        pomodoroPresets: "Mẫu nhanh:",
+        unitMin: "phút",
+        unitCycles: "vòng",
+        resetCycle: "Đặt lại chu kỳ",
+        resetTimerBtn: "Đặt lại đếm giờ",
+        pomodoroSession: "Phiên",
         breathingData: ["Hít vào", "Giữ thở", "Thở ra", "Giữ thở"]
       }
     };
@@ -2580,6 +3002,18 @@
     const workoutTitleVi = document.getElementById("workoutTitleVi");
     const workoutGifUrl = document.getElementById("workoutGifUrl");
     const workoutsSettingsList = document.getElementById("workoutsSettingsList");
+    const pomodoroDialog = document.getElementById("pomodoroDialog");
+    const pomodoroForm = document.getElementById("pomodoroForm");
+    const pomodoroFocusInput = document.getElementById("pomodoroFocusInput");
+    const pomodoroBreakInput = document.getElementById("pomodoroBreakInput");
+    const pomodoroLongBreakInput = document.getElementById("pomodoroLongBreakInput");
+    const pomodoroCyclesInput = document.getElementById("pomodoroCyclesInput");
+    const pomodoroCycleChips = document.getElementById("pomodoroCycleChips");
+    const pomodoroCurrentStatusText = document.getElementById("pomodoroCurrentStatusText");
+    const btnResetCycle = document.getElementById("btnResetCycle");
+    const btnResetTimerFromPomodoro = document.getElementById("btnResetTimerFromPomodoro");
+    const btnCancelPomodoro = document.getElementById("btnCancelPomodoro");
+    const btnTopClosePomodoro = document.getElementById("btnTopClosePomodoro");
 
     // Memoized timer display state to skip redundant DOM and document.title updates
     let lastFormattedTime = "";
@@ -3248,6 +3682,143 @@
       if (wasRunningBeforeEdit) {
         startTimerRunning();
       }
+    }
+
+    let tempCycleCount = 0;
+    let tempIsLongBreak = false;
+
+    function renderPomodoroCycleChips() {
+      const container = pomodoroCycleChips || document.getElementById("pomodoroCycleChips");
+      const statusText = pomodoroCurrentStatusText || document.getElementById("pomodoroCurrentStatusText");
+      const cyclesInput = pomodoroCyclesInput || document.getElementById("pomodoroCyclesInput");
+      if (!container) return;
+
+      const totalCycles = Math.max(1, Math.min(12, parseInt(cyclesInput ? cyclesInput.value : cyclesBeforeLongBreak, 10) || 4));
+      const t = translations[currentLang] || {};
+      const sessionLabel = t.pomodoroSession || "Session";
+      const longBreakLabel = t.longBreakMode || "Long Break";
+
+      container.innerHTML = "";
+
+      for (let i = 1; i <= totalCycles; i++) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const isCurrent = !tempIsLongBreak && tempCycleCount === (i - 1);
+        btn.className = isCurrent ? "cycle-chip active" : "cycle-chip";
+        btn.innerHTML = `<span>🍅</span><span>${i}</span>`;
+        btn.title = `${sessionLabel} ${i}/${totalCycles}`;
+        btn.addEventListener("click", () => {
+          tempIsLongBreak = false;
+          tempCycleCount = i - 1;
+          renderPomodoroCycleChips();
+          playSound("tick");
+        });
+        container.appendChild(btn);
+      }
+
+      // Long break chip
+      const lbBtn = document.createElement("button");
+      lbBtn.type = "button";
+      lbBtn.className = tempIsLongBreak ? "cycle-chip long-break-chip active" : "cycle-chip long-break-chip";
+      lbBtn.innerHTML = `<span>☕</span><span>${longBreakLabel}</span>`;
+      lbBtn.title = longBreakLabel;
+      lbBtn.addEventListener("click", () => {
+        tempIsLongBreak = true;
+        renderPomodoroCycleChips();
+        playSound("tick");
+      });
+      container.appendChild(lbBtn);
+
+      // Update status text & pill styling
+      if (statusText) {
+        if (tempIsLongBreak) {
+          statusText.innerHTML = `<span>☕</span><span>${longBreakLabel}</span>`;
+          statusText.className = "pomodoro-status-pill long-break";
+        } else {
+          statusText.innerHTML = `<span>🍅</span><span>${sessionLabel} ${Math.min(tempCycleCount + 1, totalCycles)}/${totalCycles}</span>`;
+          statusText.className = "pomodoro-status-pill";
+        }
+      }
+    }
+
+    function openPomodoroDialog() {
+      const dlg = pomodoroDialog || document.getElementById("pomodoroDialog");
+      if (!dlg) return;
+
+      tempCycleCount = currentCycleCount;
+      tempIsLongBreak = isLongBreak;
+
+      const fIn = pomodoroFocusInput || document.getElementById("pomodoroFocusInput");
+      const bIn = pomodoroBreakInput || document.getElementById("pomodoroBreakInput");
+      const lbIn = pomodoroLongBreakInput || document.getElementById("pomodoroLongBreakInput");
+      const cIn = pomodoroCyclesInput || document.getElementById("pomodoroCyclesInput");
+
+      if (fIn) fIn.value = focusMinutes;
+      if (bIn) bIn.value = breakMinutes;
+      if (lbIn) lbIn.value = longBreakMinutes;
+      if (cIn) cIn.value = cyclesBeforeLongBreak;
+
+      renderPomodoroCycleChips();
+
+      if (typeof dlg.showModal === 'function') {
+        dlg.showModal();
+      } else {
+        dlg.setAttribute("open", "");
+      }
+    }
+
+    function handlePomodoroSubmit(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      const dlg = pomodoroDialog || document.getElementById("pomodoroDialog");
+      const fIn = pomodoroFocusInput || document.getElementById("pomodoroFocusInput");
+      const bIn = pomodoroBreakInput || document.getElementById("pomodoroBreakInput");
+      const lbIn = pomodoroLongBreakInput || document.getElementById("pomodoroLongBreakInput");
+      const cIn = pomodoroCyclesInput || document.getElementById("pomodoroCyclesInput");
+
+      focusMinutes = Math.max(5, Math.min(180, parseInt(fIn ? fIn.value : focusMinutes, 10) || 45));
+      breakMinutes = Math.max(1, Math.min(60, parseInt(bIn ? bIn.value : breakMinutes, 10) || 15));
+      longBreakMinutes = Math.max(1, Math.min(120, parseInt(lbIn ? lbIn.value : longBreakMinutes, 10) || 30));
+      cyclesBeforeLongBreak = Math.max(1, Math.min(12, parseInt(cIn ? cIn.value : cyclesBeforeLongBreak, 10) || 4));
+
+      // Update cycle progress
+      currentCycleCount = Math.max(0, Math.min(tempCycleCount, cyclesBeforeLongBreak - 1));
+      isLongBreak = !!tempIsLongBreak;
+
+      // Sync to Settings inputs
+      if (inputFocusTime) inputFocusTime.value = focusMinutes;
+      if (inputBreakTime) inputBreakTime.value = breakMinutes;
+      if (inputLongBreakTime) inputLongBreakTime.value = longBreakMinutes;
+      if (inputCyclesBeforeLongBreak) inputCyclesBeforeLongBreak.value = cyclesBeforeLongBreak;
+
+      // Persist to localStorage
+      localStorage.setItem("focusMinutes", focusMinutes);
+      localStorage.setItem("breakMinutes", breakMinutes);
+      localStorage.setItem("longBreakMinutes", longBreakMinutes);
+      localStorage.setItem("cyclesBeforeLongBreak", cyclesBeforeLongBreak);
+
+      saveTimerState();
+      updateCycleBadgeUI();
+
+      // If timer is idle, update display time
+      if (timerStatus === 'idle') {
+        if (currentMode === 'focus') {
+          timeLeft = focusMinutes * 60;
+          updateTimerDisplay();
+          updateProgressBar(1);
+        } else {
+          timeLeft = (isLongBreak ? longBreakMinutes : breakMinutes) * 60;
+          updateTimerDisplay();
+        }
+      }
+
+      if (dlg) {
+        if (typeof dlg.close === 'function') dlg.close();
+        else dlg.removeAttribute("open");
+      }
+
+      const t = translations[currentLang] || {};
+      showToast(t.settingsSavedTitle || "Settings Saved", t.settingsSavedDesc || "Focus settings have been updated.", false, "good");
+      playSound("complete");
     }
 
     // ----------------------------------------------------
@@ -4719,6 +5290,78 @@
         editTimerForm.addEventListener("submit", handleEditTimerSubmit);
       }
 
+      // Pomodoro Dialog controls
+      if (cycleBadge) {
+        cycleBadge.addEventListener("click", openPomodoroDialog);
+        cycleBadge.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.code === "Space") {
+            e.preventDefault();
+            openPomodoroDialog();
+          }
+        });
+      }
+
+      if (pomodoroForm) {
+        pomodoroForm.addEventListener("submit", handlePomodoroSubmit);
+      }
+
+      if (btnCancelPomodoro) {
+        btnCancelPomodoro.addEventListener("click", () => {
+          const dlg = pomodoroDialog || document.getElementById("pomodoroDialog");
+          if (dlg) {
+            if (typeof dlg.close === 'function') dlg.close();
+            else dlg.removeAttribute("open");
+          }
+        });
+      }
+
+      if (btnTopClosePomodoro) {
+        btnTopClosePomodoro.addEventListener("click", () => {
+          const dlg = pomodoroDialog || document.getElementById("pomodoroDialog");
+          if (dlg) {
+            if (typeof dlg.close === 'function') dlg.close();
+            else dlg.removeAttribute("open");
+          }
+        });
+      }
+
+      // Quick preset chips in pomodoroDialog
+      document.querySelectorAll(".pomodoro-preset-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const fIn = pomodoroFocusInput || document.getElementById("pomodoroFocusInput");
+          const bIn = pomodoroBreakInput || document.getElementById("pomodoroBreakInput");
+          const lbIn = pomodoroLongBreakInput || document.getElementById("pomodoroLongBreakInput");
+          if (chip.dataset.focus && fIn) fIn.value = chip.dataset.focus;
+          if (chip.dataset.break && bIn) bIn.value = chip.dataset.break;
+          if (chip.dataset.longbreak && lbIn) lbIn.value = chip.dataset.longbreak;
+          playSound("tick");
+        });
+      });
+
+      if (btnResetCycle) {
+        btnResetCycle.addEventListener("click", () => {
+          tempCycleCount = 0;
+          tempIsLongBreak = false;
+          renderPomodoroCycleChips();
+          playSound("tick");
+        });
+      }
+
+      if (btnResetTimerFromPomodoro) {
+        btnResetTimerFromPomodoro.addEventListener("click", () => {
+          resetTimer();
+          playSound("tick");
+          const t = translations[currentLang] || {};
+          showToast(t.timerResetTitle || "Timer Reset", t.timerResetDesc || "Focus timer has been reset to default.", false, "good");
+        });
+      }
+
+      if (pomodoroCyclesInput) {
+        pomodoroCyclesInput.addEventListener("input", () => {
+          renderPomodoroCycleChips();
+        });
+      }
+
       // Native backdrop-click dismiss for all dialogs
       document.querySelectorAll("dialog").forEach(dlg => {
         dlg.addEventListener("click", (e) => {
@@ -4777,7 +5420,7 @@
           return;
         }
 
-        const isAnyDialogOpen = (workoutDialog && workoutDialog.open) || (editTimerDialog && editTimerDialog.open) || (mindfulnessModal && !mindfulnessModal.hidden);
+        const isAnyDialogOpen = (workoutDialog && workoutDialog.open) || (editTimerDialog && editTimerDialog.open) || (pomodoroDialog && pomodoroDialog.open) || (mindfulnessModal && !mindfulnessModal.hidden);
 
         if (e.key === "Escape") {
           if (mindfulnessModal && !mindfulnessModal.hidden) {
@@ -4786,6 +5429,7 @@
           }
           if (workoutDialog && workoutDialog.open) workoutDialog.close();
           if (editTimerDialog && editTimerDialog.open) handleEditTimerCancel();
+          if (pomodoroDialog && pomodoroDialog.open) pomodoroDialog.close();
           return;
         }
 

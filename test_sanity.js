@@ -32,6 +32,7 @@ function runSanityCheck() {
       addEventListener: () => {},
       createElement: () => ({
         style: {},
+        classList: { add: () => {}, remove: () => {}, contains: () => false },
         addEventListener: () => {},
       }),
       querySelectorAll: () => [],
@@ -458,6 +459,9 @@ function runSanityCheck() {
       /\.cycle-badge\s*\{[^}]*flex-shrink:\s*0/i,
       /\.wakelock-badge\s*\{[^}]*flex-shrink:\s*0/i,
       /@media\s*\(max-width:\s*440px\)/i,
+      /@media\s*\(min-width:\s*768px\)/i,
+      /@media\s*\(min-width:\s*1024px\)/i,
+      /:focus-visible/i,
       /@media\s*\(max-height:\s*680px\)\s*and\s*\(orientation:\s*portrait\)/i,
       /#btnStatsShortcut\s*\{[^}]*display:\s*none/i,
       /#btnStartPause\s*\{[^}]*flex-shrink:\s*0/i
@@ -540,6 +544,88 @@ function runSanityCheck() {
       throw new Error('Stats chart does not parse local date components (y, m - 1, d)!');
     }
     console.log('✅ Success: Comprehensive UI/UX upgrade assertions verified.');
+
+    // 6. Test Pomodoro Settings & Progress Modal
+    console.log('Running test for Pomodoro Settings & Progress Dialog...');
+    if (!content.includes('id="pomodoroDialog"') || !content.includes('id="cycleBadge"')) {
+      throw new Error('pomodoroDialog or cycleBadge is missing in index.html!');
+    }
+    if (!content.includes('id="btnResetCycle"') || !content.includes('id="btnResetTimerFromPomodoro"')) {
+      throw new Error('btnResetCycle or btnResetTimerFromPomodoro is missing in index.html!');
+    }
+    if (!content.includes('pomodoro-chips-row') || !content.includes('cycle-chip')) {
+      throw new Error('pomodoro-chips-row or cycle-chip styling is missing in index.html!');
+    }
+    if (!content.includes('pomodoro-card') || !content.includes('pomodoro-status-pill') || !content.includes('pomodoro-preset-chip') || !content.includes('id="btnTopClosePomodoro"')) {
+      throw new Error('Pomodoro modal UI/UX ergonomic card elements (pomodoro-card, status-pill, preset-chip, btnTopClosePomodoro) are missing in index.html!');
+    }
+
+    const openPomodoroDialog = context.openPomodoroDialog;
+    const handlePomodoroSubmit = context.handlePomodoroSubmit;
+    const renderPomodoroCycleChips = context.renderPomodoroCycleChips;
+
+    if (typeof openPomodoroDialog !== 'function' || typeof handlePomodoroSubmit !== 'function' || typeof renderPomodoroCycleChips !== 'function') {
+      throw new Error('Pomodoro modal functions (openPomodoroDialog, handlePomodoroSubmit, renderPomodoroCycleChips) are not defined in context!');
+    }
+
+    // Test opening and populating
+    vm.runInContext('focusMinutes = 50; breakMinutes = 10; longBreakMinutes = 20; cyclesBeforeLongBreak = 5; currentCycleCount = 2; isLongBreak = false;', context);
+    openPomodoroDialog();
+
+    const pFocusIn = mockWindow.document.getElementById('pomodoroFocusInput');
+    const pBreakIn = mockWindow.document.getElementById('pomodoroBreakInput');
+    const pLongIn = mockWindow.document.getElementById('pomodoroLongBreakInput');
+    const pCyclesIn = mockWindow.document.getElementById('pomodoroCyclesInput');
+
+    if (pFocusIn.value !== 50 || pBreakIn.value !== 10 || pLongIn.value !== 20 || pCyclesIn.value !== 5) {
+      throw new Error(`openPomodoroDialog failed to populate form fields: ${pFocusIn.value}, ${pBreakIn.value}, ${pLongIn.value}, ${pCyclesIn.value}`);
+    }
+    const tempCycle = vm.runInContext('tempCycleCount', context);
+    const tempLB = vm.runInContext('tempIsLongBreak', context);
+    if (tempCycle !== 2 || tempLB !== false) {
+      throw new Error(`openPomodoroDialog failed to initialize temp state: tempCycleCount=${tempCycle}, tempIsLongBreak=${tempLB}`);
+    }
+
+    // Test modifying settings and progress via submit
+    pFocusIn.value = 35;
+    pBreakIn.value = 7;
+    pLongIn.value = 25;
+    pCyclesIn.value = 4;
+    vm.runInContext('tempCycleCount = 3; tempIsLongBreak = false;', context);
+
+    handlePomodoroSubmit({ preventDefault: () => {} });
+
+    if (vm.runInContext('focusMinutes', context) !== 35 ||
+        vm.runInContext('breakMinutes', context) !== 7 ||
+        vm.runInContext('longBreakMinutes', context) !== 25 ||
+        vm.runInContext('cyclesBeforeLongBreak', context) !== 4 ||
+        vm.runInContext('currentCycleCount', context) !== 3 ||
+        vm.runInContext('isLongBreak', context) !== false) {
+      throw new Error('handlePomodoroSubmit failed to update context variables correctly!');
+    }
+
+    if (storage['focusMinutes'] !== '35' ||
+        storage['breakMinutes'] !== '7' ||
+        storage['longBreakMinutes'] !== '25' ||
+        storage['cyclesBeforeLongBreak'] !== '4') {
+      throw new Error('handlePomodoroSubmit failed to persist values to localStorage!');
+    }
+
+    // Test Long Break selection and Reset Cycle
+    vm.runInContext('tempIsLongBreak = true; tempCycleCount = 1;', context);
+    handlePomodoroSubmit({ preventDefault: () => {} });
+    if (!vm.runInContext('isLongBreak', context)) {
+      throw new Error('Setting Long Break in Pomodoro dialog failed!');
+    }
+
+    // Reset cycle
+    vm.runInContext('tempCycleCount = 0; tempIsLongBreak = false;', context);
+    handlePomodoroSubmit({ preventDefault: () => {} });
+    if (vm.runInContext('currentCycleCount', context) !== 0 || vm.runInContext('isLongBreak', context) !== false) {
+      throw new Error('Reset Cycle failed to restore cycle to 0!');
+    }
+
+    console.log('✅ Success: Pomodoro Settings & Progress Modal tests passed.');
   } catch (err) {
     console.error('❌ Sanity check failed!');
     console.error(err);

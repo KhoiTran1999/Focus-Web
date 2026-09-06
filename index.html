@@ -1777,13 +1777,6 @@
               <div class="stretch-title" id="stretchTitle">Workout</div>
               <div class="stretch-instructions" id="stretchDesc">Tập luyện HIIT để vận động cơ thể.</div>
             </div>
-
-            <div id="workoutSetsSection" style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%;">
-              <div style="font-size: 1.1rem; font-weight: 700; color: var(--break-accent);" id="workoutSetsTarget">3 Sets x 20 Reps</div>
-              <div style="display: flex; gap: 12px; margin-top: 4px;" id="workoutSetsTracker">
-                <!-- Clickable buttons for sets -->
-              </div>
-            </div>
           </div>
 
           <div class="controls-row" style="margin-bottom: 20px;">
@@ -2012,6 +2005,77 @@
     </nav>
   </div>
 
+  <!-- Add/Edit Workout Dialog -->
+  <dialog id="workoutDialog">
+    <form id="workoutForm" method="dialog" class="dialog-form">
+      <h3 id="dialogTitle" class="dialog-title">Add Workout</h3>
+      <input type="hidden" id="editWorkoutId">
+
+      <div class="dialog-field">
+        <label class="dialog-label" data-t="workoutTitleEn">Title (English)</label>
+        <input type="text" id="workoutTitleEn" required class="dialog-input">
+      </div>
+
+      <div class="dialog-field">
+        <label class="dialog-label" data-t="workoutTitleVi">Title (Vietnamese)</label>
+        <input type="text" id="workoutTitleVi" required class="dialog-input">
+      </div>
+
+      <div class="dialog-field">
+        <label class="dialog-label" data-t="workoutGifUrl">GIF/Image URL or Path</label>
+        <input type="text" id="workoutGifUrl" required class="dialog-input" placeholder="e.g. listWorkoutGif/Jumping jacks interval.webp">
+      </div>
+
+      <div class="dialog-row">
+        <div class="dialog-field" style="flex: 1;">
+          <label class="dialog-label" data-t="workoutSets">Sets</label>
+          <input type="number" id="workoutSets" min="1" max="10" value="3" required class="dialog-input" style="text-align: center;">
+        </div>
+        <div class="dialog-field" style="flex: 1;">
+          <label class="dialog-label" data-t="workoutReps">Reps</label>
+          <input type="number" id="workoutReps" min="1" max="100" value="15" required class="dialog-input" style="text-align: center;">
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button type="button" id="btnCancelDialog" class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Edit Timer Dialog -->
+  <dialog id="editTimerDialog">
+    <form id="editTimerForm" method="dialog" class="dialog-form" style="min-width: 240px;">
+      <h3 id="editTimerTitle" class="dialog-title" data-t="editTimerTitle">Adjust Remaining Time</h3>
+
+      <div class="dialog-chips-row">
+        <button type="button" class="btn-chip" data-delta="-300">-5m</button>
+        <button type="button" class="btn-chip" data-delta="60">+1m</button>
+        <button type="button" class="btn-chip" data-delta="300">+5m</button>
+        <button type="button" class="btn-chip" data-preset="25">25m</button>
+        <button type="button" class="btn-chip" data-preset="45">45m</button>
+      </div>
+
+      <div class="dialog-timer-picker">
+        <div class="dialog-timer-col">
+          <label class="dialog-label" style="text-align: center;" data-t="minutes">Minutes</label>
+          <input type="number" id="editTimerMinutes" min="0" max="180" required class="dialog-input dialog-timer-input">
+        </div>
+        <span style="font-size: 1.5rem; font-weight: 700; margin-top: 18px; color: var(--text-muted);">:</span>
+        <div class="dialog-timer-col">
+          <label class="dialog-label" style="text-align: center;" data-t="seconds">Seconds</label>
+          <input type="number" id="editTimerSeconds" min="0" max="59" required class="dialog-input dialog-timer-input">
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button type="button" id="btnCancelEditTimer" class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
   <script>
     // State Variables
     let focusMinutes = 45;
@@ -2129,6 +2193,8 @@
         confirmSkipPhase: "Skip the current phase?",
         confirmSkipBreak: "Skip the rest of your movement break and return to focus?",
         confirmResetTimer: "Reset current timer and restore defaults?",
+        timerResetTitle: "Timer Reset",
+        timerResetDesc: "Focus timer has been reset to default.",
         resetCompletedTitle: "Reset Completed",
         resetCompletedDesc: "You should feel more relaxed and focused now.",
         wakeLockSupported: "Always-On",
@@ -2241,6 +2307,8 @@
         confirmSkipPhase: "Bạn muốn bỏ qua phiên hiện tại?",
         confirmSkipBreak: "Bỏ qua thời gian nghỉ ngơi còn lại và quay lại tập trung?",
         confirmResetTimer: "Đặt lại bộ đếm giờ hiện tại về mặc định?",
+        timerResetTitle: "Đã đặt lại thời gian",
+        timerResetDesc: "Bộ đếm giờ đã được reset về mặc định.",
         resetCompletedTitle: "Đã thư giãn xong",
         resetCompletedDesc: "Cơ thể bạn đã được tái tạo năng lượng để tiếp tục làm việc.",
         wakeLockSupported: "Màn hình bật",
@@ -3294,9 +3362,14 @@
     let wasRunningBeforeEdit = false;
 
     function openEditTimerDialog() {
+      const dlg = editTimerDialog || document.getElementById("editTimerDialog");
+      const minEl = editTimerMinutes || document.getElementById("editTimerMinutes");
+      const secEl = editTimerSeconds || document.getElementById("editTimerSeconds");
+      if (!dlg || !minEl || !secEl) return;
+
       const totalSecs = Math.round(timeLeft);
-      editTimerMinutes.value = Math.floor(totalSecs / 60);
-      editTimerSeconds.value = totalSecs % 60;
+      minEl.value = Math.floor(totalSecs / 60);
+      secEl.value = totalSecs % 60;
 
       if (timerStatus === 'running') {
         wasRunningBeforeEdit = true;
@@ -3306,13 +3379,20 @@
         wasRunningBeforeEdit = false;
       }
 
-      editTimerDialog.showModal();
+      if (typeof dlg.showModal === 'function') {
+        dlg.showModal();
+      } else {
+        dlg.setAttribute("open", "");
+      }
     }
 
     function handleEditTimerSubmit(e) {
-      e.preventDefault();
-      const mins = Math.max(0, parseInt(editTimerMinutes.value, 10) || 0);
-      const secs = Math.max(0, Math.min(59, parseInt(editTimerSeconds.value, 10) || 0));
+      if (e && e.preventDefault) e.preventDefault();
+      const dlg = editTimerDialog || document.getElementById("editTimerDialog");
+      const minEl = editTimerMinutes || document.getElementById("editTimerMinutes");
+      const secEl = editTimerSeconds || document.getElementById("editTimerSeconds");
+      const mins = Math.max(0, parseInt(minEl ? minEl.value : 0, 10) || 0);
+      const secs = Math.max(0, Math.min(59, parseInt(secEl ? secEl.value : 0, 10) || 0));
 
       timeLeft = mins * 60 + secs;
 
@@ -3324,7 +3404,10 @@
         setSproutStage((1 - ratio) * 100);
       }
 
-      editTimerDialog.close();
+      if (dlg) {
+        if (typeof dlg.close === 'function') dlg.close();
+        else dlg.removeAttribute("open");
+      }
 
       if (wasRunningBeforeEdit) {
         startTimerRunning();
@@ -3334,7 +3417,11 @@
     }
 
     function handleEditTimerCancel() {
-      editTimerDialog.close();
+      const dlg = editTimerDialog || document.getElementById("editTimerDialog");
+      if (dlg) {
+        if (typeof dlg.close === 'function') dlg.close();
+        else dlg.removeAttribute("open");
+      }
       if (wasRunningBeforeEdit) {
         startTimerRunning();
       }
@@ -3615,6 +3702,7 @@
       } else {
         // Break finished
         recordBreakCompleted();
+        recordStretchCompleted();
         showToast(t.breakFinishedTitle, t.breakFinishedDesc, false, "accent");
         sendWebNotification(t.breakFinishedTitle, t.breakFinishedDesc);
 
@@ -4259,53 +4347,9 @@
     }
 
     function renderSetsTracker(setsCount, repsCount) {
-      if (!workoutSetsTracker || !workoutSetsTarget) return;
-      workoutSetsTracker.innerHTML = "";
-
-      const t = translations[currentLang];
-      workoutSetsTarget.innerText = currentLang === 'vi'
-        ? `${setsCount} Hiệp x ${repsCount} Lần`
-        : `${setsCount} Sets x ${repsCount} Reps`;
-
-      for (let i = 1; i <= setsCount; i++) {
-        const btn = document.createElement("button");
-        const isCompleted = i <= hiitSetsCompleted;
-        btn.className = "set-tracker-btn" + (isCompleted ? " completed" : "");
-        btn.innerHTML = isCompleted
-          ? `<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`
-          : `<span>${i}</span>`;
-        btn.title = `Set ${i}`;
-        if (typeof btn.setAttribute === "function") {
-          btn.setAttribute("aria-label", `Set ${i}`);
-        }
-
-        btn.addEventListener("click", () => {
-          if (i <= hiitSetsCompleted) {
-            // Undo up to this set
-            hiitSetsCompleted = i - 1;
-            playSound("pause");
-          } else {
-            // Complete up to this set
-            hiitSetsCompleted = i;
-            recordStretchCompleted(); // Increment stretches completed count
-            playSound("tick");
-            if ("vibrate" in navigator) {
-              try { navigator.vibrate(40); } catch (_) {}
-            }
-          }
-
-          // Re-render tracker
-          renderSetsTracker(setsCount, repsCount);
-
-          if (hiitSetsCompleted === setsCount) {
-            playSound("complete");
-            showToast(t.workoutCompleted, "🎉 Keep it up!", false, "good");
-          }
-          saveTimerState();
-        });
-
-        workoutSetsTracker.appendChild(btn);
-      }
+      // Sets and rep tracker buttons removed per user request
+      if (workoutSetsTracker) workoutSetsTracker.innerHTML = "";
+      if (workoutSetsTarget) workoutSetsTarget.innerText = "";
     }
 
     // ----------------------------------------------------
@@ -4753,40 +4797,19 @@
       }
       btnSkipTimer.addEventListener("click", skipTimer);
 
-      // Hold-to-Reset interaction (800ms hold replaces confirm modal)
-      let resetHoldTimeout = null;
-      let isHoldingReset = false;
-      function startHoldReset(e) {
-        if (e && e.button !== undefined && e.button !== 0) return;
-        isHoldingReset = true;
-        btnResetTimer.classList.add("holding-reset");
-        resetHoldTimeout = setTimeout(() => {
-          if (isHoldingReset) {
-            btnResetTimer.classList.remove("holding-reset");
-            isHoldingReset = false;
-            resetTimer();
-            playSound("complete");
-            showToast(translations[currentLang]?.resetCompletedTitle || "Đã đặt lại thời gian", "", false, "good");
-            if ("vibrate" in navigator) {
-              try { navigator.vibrate(60); } catch (_) {}
-            }
-          }
-        }, 800);
-      }
-      function cancelHoldReset() {
-        if (isHoldingReset) {
-          isHoldingReset = false;
-          btnResetTimer.classList.remove("holding-reset");
-          clearTimeout(resetHoldTimeout);
-        }
-      }
-      btnResetTimer.addEventListener("pointerdown", startHoldReset);
-      btnResetTimer.addEventListener("pointerup", cancelHoldReset);
-      btnResetTimer.addEventListener("pointercancel", cancelHoldReset);
-      btnResetTimer.addEventListener("pointerleave", cancelHoldReset);
-      btnResetTimer.addEventListener("click", (e) => {
-        if (e && !e.isTrusted) {
+      // Reset interaction with user confirmation
+      btnResetTimer.addEventListener("click", () => {
+        const t = translations[currentLang];
+        const confirmMsg = t?.confirmResetTimer || "Đặt lại bộ đếm giờ hiện tại về mặc định?";
+        if (confirm(confirmMsg)) {
           resetTimer();
+          playSound("complete");
+          showToast(t?.timerResetTitle || "Đã đặt lại thời gian", t?.timerResetDesc || "Bộ đếm giờ đã được reset về mặc định.", false, "good");
+          if ("vibrate" in navigator) {
+            try { navigator.vibrate(60); } catch (_) {}
+          }
+        } else {
+          lastTickTime = Date.now();
         }
       });
 
@@ -5024,76 +5047,5 @@
     // Run Initialization on Load
     window.addEventListener("DOMContentLoaded", init);
   </script>
-
-  <!-- Add/Edit Workout Dialog -->
-  <dialog id="workoutDialog">
-    <form id="workoutForm" method="dialog" class="dialog-form">
-      <h3 id="dialogTitle" class="dialog-title">Add Workout</h3>
-      <input type="hidden" id="editWorkoutId">
-
-      <div class="dialog-field">
-        <label class="dialog-label" data-t="workoutTitleEn">Title (English)</label>
-        <input type="text" id="workoutTitleEn" required class="dialog-input">
-      </div>
-
-      <div class="dialog-field">
-        <label class="dialog-label" data-t="workoutTitleVi">Title (Vietnamese)</label>
-        <input type="text" id="workoutTitleVi" required class="dialog-input">
-      </div>
-
-      <div class="dialog-field">
-        <label class="dialog-label" data-t="workoutGifUrl">GIF/Image URL or Path</label>
-        <input type="text" id="workoutGifUrl" required class="dialog-input" placeholder="e.g. listWorkoutGif/Jumping jacks interval.webp">
-      </div>
-
-      <div class="dialog-row">
-        <div class="dialog-field" style="flex: 1;">
-          <label class="dialog-label" data-t="workoutSets">Sets</label>
-          <input type="number" id="workoutSets" min="1" max="10" value="3" required class="dialog-input" style="text-align: center;">
-        </div>
-        <div class="dialog-field" style="flex: 1;">
-          <label class="dialog-label" data-t="workoutReps">Reps</label>
-          <input type="number" id="workoutReps" min="1" max="100" value="15" required class="dialog-input" style="text-align: center;">
-        </div>
-      </div>
-
-      <div class="dialog-actions">
-        <button type="button" id="btnCancelDialog" class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="cancel">Cancel</button>
-        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="save">Save</button>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- Edit Timer Dialog -->
-  <dialog id="editTimerDialog">
-    <form id="editTimerForm" method="dialog" class="dialog-form" style="min-width: 240px;">
-      <h3 id="editTimerTitle" class="dialog-title" data-t="editTimerTitle">Adjust Remaining Time</h3>
-
-      <div class="dialog-chips-row">
-        <button type="button" class="btn-chip" data-delta="-300">-5m</button>
-        <button type="button" class="btn-chip" data-delta="60">+1m</button>
-        <button type="button" class="btn-chip" data-delta="300">+5m</button>
-        <button type="button" class="btn-chip" data-preset="25">25m</button>
-        <button type="button" class="btn-chip" data-preset="45">45m</button>
-      </div>
-
-      <div class="dialog-timer-picker">
-        <div class="dialog-timer-col">
-          <label class="dialog-label" style="text-align: center;" data-t="minutes">Minutes</label>
-          <input type="number" id="editTimerMinutes" min="0" max="180" required class="dialog-input dialog-timer-input">
-        </div>
-        <span style="font-size: 1.5rem; font-weight: 700; margin-top: 18px; color: var(--text-muted);">:</span>
-        <div class="dialog-timer-col">
-          <label class="dialog-label" style="text-align: center;" data-t="seconds">Seconds</label>
-          <input type="number" id="editTimerSeconds" min="0" max="59" required class="dialog-input dialog-timer-input">
-        </div>
-      </div>
-
-      <div class="dialog-actions">
-        <button type="button" id="btnCancelEditTimer" class="btn btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="cancel">Cancel</button>
-        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" data-t="save">Save</button>
-      </div>
-    </form>
-  </dialog>
 </body>
 </html>

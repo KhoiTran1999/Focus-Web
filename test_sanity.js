@@ -77,16 +77,29 @@ function runSanityCheck() {
         request: async () => ({ addEventListener: () => {} })
       },
       serviceWorker: {
-        register: async () => ({})
-      }
+        register: async () => ({}),
+        ready: Promise.resolve({
+          showNotification: async (title, opts) => {
+            mockWindow.lastServiceWorkerNotification = { title, opts };
+          },
+          getNotifications: async () => []
+        })
+      },
+      vibrate: () => true
     },
-    Notification: {
-      permission: "default",
+    Notification: Object.assign(function(title, opts) {
+      mockWindow.lastWebNotification = { title, opts };
+      return { close: () => {} };
+    }, {
+      permission: "granted",
       requestPermission: async () => "granted"
-    },
+    }),
     setInterval: () => 1,
     clearInterval: () => {},
-    setTimeout: () => 1,
+    setTimeout: (cb) => { if (typeof cb === 'function') cb(); return 1; },
+    clearTimeout: () => {},
+    requestAnimationFrame: (cb) => { if (typeof cb === 'function') cb(); return 1; },
+    cancelAnimationFrame: () => {},
     console: {
       log: console.log,
       error: console.error,
@@ -101,7 +114,14 @@ function runSanityCheck() {
     parseInt: parseInt,
     parseFloat: parseFloat,
     confirm: () => true,
-    alert: () => {}
+    alert: () => {},
+    Audio: function(src) {
+      return {
+        src,
+        currentTime: 0,
+        play: async () => {}
+      };
+    }
   };
 
   mockWindow.window = mockWindow;
@@ -238,6 +258,177 @@ function runSanityCheck() {
       throw new Error(`Pomodoro Long Break transition failed: isLongBreak=${isLongBreakVal}, cycleCount=${cycleCountVal}, mode=${currentModeVal}`);
     }
     console.log('✅ Success: Pomodoro Long Break cycle test passed.');
+
+    // Test Breathing Audio cues and box breathing transitions
+    console.log('Running test for Box Breathing audio cues and phase transitions...');
+    const playedSounds = [];
+    vm.runInContext(`
+      const origPlaySound = playSound;
+      playSound = function(type) {
+        playedSoundsArray.push(type);
+        return origPlaySound(type);
+      };
+    `, Object.assign(context, { playedSoundsArray: playedSounds }));
+
+    const playBreathingCue = context.playBreathingCue;
+    if (typeof playBreathingCue !== 'function') {
+      throw new Error('playBreathingCue is not a function in context!');
+    }
+
+    // Direct cue mapping tests
+    playedSounds.length = 0;
+    playBreathingCue(0);
+    if (playedSounds[playedSounds.length - 1] !== 'breathe-inhale') {
+      throw new Error(`Expected breathe-inhale for phase 0, got ${playedSounds[playedSounds.length - 1]}`);
+    }
+
+    playBreathingCue(1);
+    if (playedSounds[playedSounds.length - 1] !== 'breathe-hold') {
+      throw new Error(`Expected breathe-hold for phase 1, got ${playedSounds[playedSounds.length - 1]}`);
+    }
+
+    playBreathingCue(2);
+    if (playedSounds[playedSounds.length - 1] !== 'breathe-exhale') {
+      throw new Error(`Expected breathe-exhale for phase 2, got ${playedSounds[playedSounds.length - 1]}`);
+    }
+
+    playBreathingCue(3);
+    if (playedSounds[playedSounds.length - 1] !== 'breathe-hold-empty') {
+      throw new Error(`Expected breathe-hold-empty for phase 3, got ${playedSounds[playedSounds.length - 1]}`);
+    }
+
+    // Test startBoxBreathing triggers initial inhale audio cue
+    playedSounds.length = 0;
+    const startBoxBreathing = context.startBoxBreathing;
+    startBoxBreathing();
+    if (playedSounds[0] !== 'breathe-inhale') {
+      throw new Error(`Expected breathe-inhale on startBoxBreathing, got ${playedSounds[0]}`);
+    }
+
+    // Simulate 4 seconds countdown in tickBoxBreathing to advance phase to 1 (Hold)
+    playedSounds.length = 0;
+    const tickBoxBreathing = context.tickBoxBreathing;
+    for (let s = 0; s < 4; s++) {
+      tickBoxBreathing();
+    }
+    const phaseIndexAfter4s = vm.runInContext('boxBreathingPhaseIndex', context);
+    if (phaseIndexAfter4s !== 1) {
+      throw new Error(`Expected phase 1 after 4s, got ${phaseIndexAfter4s}`);
+    }
+    if (playedSounds[playedSounds.length - 1] !== 'breathe-hold') {
+      throw new Error(`Expected breathe-hold sound after phase transition to 1, got ${playedSounds[playedSounds.length - 1]}`);
+    }
+
+    // Test completion sound
+    playedSounds.length = 0;
+    const endBoxBreathing = context.endBoxBreathing;
+    endBoxBreathing(true);
+    if (!playedSounds.includes('complete')) {
+      throw new Error('Expected complete sound on endBoxBreathing(true)');
+    }
+    console.log('✅ Success: Box Breathing audio cues and phase transitions test passed.');
+
+    // Test Random Mindfulness Bell (Chuong chanh niem)
+    console.log('Running test for Random Mindfulness Bell...');
+    const scheduleMindfulnessBell = context.scheduleMindfulnessBell;
+    const triggerMindfulnessBell = context.triggerMindfulnessBell;
+    if (typeof scheduleMindfulnessBell !== 'function' || typeof triggerMindfulnessBell !== 'function') {
+      throw new Error('scheduleMindfulnessBell or triggerMindfulnessBell is not defined!');
+    }
+
+    // 1. Focus mode scheduling
+    vm.runInContext('enableMindfulnessBell = true; currentMode = "focus"; focusMinutes = 25;', context);
+    scheduleMindfulnessBell();
+    let target = vm.runInContext('mindfulnessBellTargetTimeLeft', context);
+    let triggered = vm.runInContext('mindfulnessBellTriggeredThisSession', context);
+    if (target === null || target < Math.floor(25 * 60 * 0.15) || target > Math.ceil(25 * 60 * 0.85) || triggered !== false) {
+      throw new Error(`Invalid focus mode mindfulness bell target: ${target}`);
+    }
+
+    // 2. Short break mode scheduling (should NOT schedule)
+    vm.runInContext('currentMode = "break"; isLongBreak = false; breakMinutes = 5;', context);
+    scheduleMindfulnessBell();
+    target = vm.runInContext('mindfulnessBellTargetTimeLeft', context);
+    if (target !== null) {
+      throw new Error(`Mindfulness bell should not be scheduled during short break, got target=${target}`);
+    }
+
+    // 3. Long break mode scheduling (SHOULD schedule)
+    vm.runInContext('currentMode = "break"; isLongBreak = true; longBreakMinutes = 15;', context);
+    scheduleMindfulnessBell();
+    target = vm.runInContext('mindfulnessBellTargetTimeLeft', context);
+    if (target === null || target < Math.floor(15 * 60 * 0.15) || target > Math.ceil(15 * 60 * 0.85)) {
+      throw new Error(`Invalid long break mindfulness bell target: ${target}`);
+    }
+
+    // 4. Disabled setting (should NOT schedule)
+    vm.runInContext('enableMindfulnessBell = false;', context);
+    scheduleMindfulnessBell();
+    target = vm.runInContext('mindfulnessBellTargetTimeLeft', context);
+    if (target !== null) {
+      throw new Error('Mindfulness bell should not schedule when enableMindfulnessBell = false');
+    }
+
+    // 5. Trigger during timerTick
+    vm.runInContext('enableMindfulnessBell = true; mindfulnessBellTriggeredThisSession = false; mindfulnessBellTargetTimeLeft = 500; timeLeft = 510; isDebugMode = false;', context);
+    const timerTick = context.timerTick;
+    vm.runInContext('lastTickTime = Date.now() - 1000;', context);
+    timerTick();
+    triggered = vm.runInContext('mindfulnessBellTriggeredThisSession', context);
+    if (triggered !== false) {
+      throw new Error('Mindfulness bell triggered prematurely!');
+    }
+
+    vm.runInContext('timeLeft = 500; lastTickTime = Date.now() - 2000;', context);
+    timerTick();
+    triggered = vm.runInContext('mindfulnessBellTriggeredThisSession', context);
+    if (triggered !== true) {
+      throw new Error('Mindfulness bell failed to trigger when timeLeft <= target!');
+    }
+    console.log('✅ Success: Random Mindfulness Bell tests passed.');
+
+    console.log('Running test for background mindfulness bell notifications, prominent modal & manual dismissal...');
+    const flashTabTitle = context.flashTabTitle;
+    if (typeof flashTabTitle !== 'function') {
+      throw new Error('flashTabTitle function is not defined!');
+    }
+
+    flashTabTitle('🔔 Test Alert');
+    const alertInterval = vm.runInContext('alertTitleInterval', context);
+    if (!alertInterval) {
+      throw new Error('flashTabTitle did not initiate alertTitleInterval');
+    }
+
+    // Verify translations do not contain "30s" or "30 giây"
+    const translations = vm.runInContext('translations', context);
+    for (const [lang, dict] of Object.entries(translations)) {
+      if (dict.mindfulnessBellToastTitle && (dict.mindfulnessBellToastTitle.includes('30s') || dict.mindfulnessBellToastTitle.includes('30 giây'))) {
+        throw new Error(`Translations for ${lang} contain "30s" in mindfulnessBellToastTitle`);
+      }
+      if (dict.mindfulnessBellToastDesc && (dict.mindfulnessBellToastDesc.includes('30s') || dict.mindfulnessBellToastDesc.includes('30 giây'))) {
+        throw new Error(`Translations for ${lang} contain "30s" in mindfulnessBellToastDesc`);
+      }
+      if (dict.mindfulnessBellTabAlert && (dict.mindfulnessBellTabAlert.includes('30s') || dict.mindfulnessBellTabAlert.includes('30 giây'))) {
+        throw new Error(`Translations for ${lang} contain "30s" in mindfulnessBellTabAlert`);
+      }
+    }
+
+    // Call triggerMindfulnessBell with notifications enabled
+    vm.runInContext('enableNotifications = true;', context);
+    triggerMindfulnessBell(false);
+
+    // Verify modal was displayed and requires manual dismissal
+    const modalEl = mockWindow.document.getElementById('mindfulnessModal');
+    if (modalEl && modalEl.hidden !== false) {
+      throw new Error('mindfulnessModal was not made visible after triggerMindfulnessBell');
+    }
+
+    const dismissMindfulnessModal = context.dismissMindfulnessModal;
+    if (typeof dismissMindfulnessModal !== 'function') {
+      throw new Error('dismissMindfulnessModal function is not defined');
+    }
+    dismissMindfulnessModal();
+    console.log('✅ Success: Background mindfulness bell notifications, prominent modal & manual dismissal passed.');
   } catch (err) {
     console.error('❌ Sanity check failed!');
     console.error(err);

@@ -622,6 +622,132 @@
       line-height: 1.3;
     }
 
+    /* Mindfulness Bell Modal Overlay & Ripple Effects */
+    .mindfulness-modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 15, 0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1200;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+      border-radius: 36px;
+    }
+    .mindfulness-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .mindfulness-card {
+      background: linear-gradient(150deg, rgba(28, 34, 46, 0.96), rgba(16, 20, 28, 0.98));
+      border: 1.5px solid rgba(57, 135, 229, 0.45);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.75), 0 0 50px rgba(57, 135, 229, 0.25);
+      border-radius: 28px;
+      padding: 38px 28px 30px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      transform: scale(0.9) translateY(12px);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .mindfulness-modal-overlay.active .mindfulness-card {
+      transform: scale(1) translateY(0);
+    }
+    .mindfulness-close-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, transform 0.2s;
+    }
+    .mindfulness-close-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      transform: scale(1.1);
+    }
+    .mindfulness-ripple-container {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mindfulness-bell-icon {
+      font-size: 3.2rem;
+      z-index: 2;
+      animation: gentleBellSwing 2.8s ease-in-out infinite;
+      filter: drop-shadow(0 0 18px rgba(250, 178, 25, 0.6));
+      user-select: none;
+    }
+    @keyframes gentleBellSwing {
+      0%, 100% { transform: rotate(0deg); }
+      20% { transform: rotate(14deg); }
+      40% { transform: rotate(-12deg); }
+      60% { transform: rotate(7deg); }
+      80% { transform: rotate(-5deg); }
+    }
+    .mindfulness-ripple {
+      position: absolute;
+      border-radius: 50%;
+      border: 2px solid rgba(57, 135, 229, 0.6);
+      inset: 0;
+      animation: rippleWave 3.2s cubic-bezier(0.1, 0.2, 0.3, 1) infinite;
+      pointer-events: none;
+    }
+    .ripple-1 { animation-delay: 0s; }
+    .ripple-2 { animation-delay: 1.1s; }
+    .ripple-3 { animation-delay: 2.2s; }
+    @keyframes rippleWave {
+      0% { transform: scale(0.6); opacity: 0.95; border-color: rgba(250, 178, 25, 0.85); box-shadow: 0 0 20px rgba(250, 178, 25, 0.4); }
+      50% { opacity: 0.55; border-color: rgba(57, 135, 229, 0.7); box-shadow: 0 0 30px rgba(57, 135, 229, 0.3); }
+      100% { transform: scale(2.3); opacity: 0; border-color: rgba(57, 135, 229, 0); }
+    }
+    .mindfulness-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 12px;
+      letter-spacing: -0.02em;
+    }
+    .mindfulness-desc {
+      font-size: 1.05rem;
+      line-height: 1.65;
+      color: var(--text-secondary);
+      margin: 0 0 26px;
+      font-weight: 400;
+    }
+    .mindfulness-action-btn {
+      width: 100%;
+      padding: 14px 24px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(57, 135, 229, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .mindfulness-action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(57, 135, 229, 0.55);
+    }
+
     /* Stretch Exercise View (Break Mode) */
     .break-view-container {
       display: flex;
@@ -708,7 +834,7 @@
       border-radius: 50%;
       background-color: var(--accent);
       opacity: 0.7;
-      transition: transform 4s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 1s linear, background-color 0.5s ease;
       box-shadow: 0 0 30px var(--accent-muted);
     }
 
@@ -991,6 +1117,21 @@
       background-color: rgba(27, 19, 14, 0.85);
     }
 
+    @keyframes mindfulnessPulse {
+      0%, 100% {
+        box-shadow: inset 0 0 45px rgba(57, 135, 229, 0.45), 0 0 35px rgba(57, 135, 229, 0.3);
+        border-color: rgba(57, 135, 229, 0.95);
+      }
+      50% {
+        box-shadow: inset 0 0 15px rgba(57, 135, 229, 0.15), 0 0 10px rgba(57, 135, 229, 0.1);
+        border-color: rgba(57, 135, 229, 0.4);
+      }
+    }
+    .station-container.mindfulness-active {
+      animation: mindfulnessPulse 3.5s ease-in-out infinite;
+      border: 2px solid var(--accent) !important;
+    }
+
     /* AMOLED Minimalist Zoom Mode styles */
     body.amoled-mode {
       background: #000000 !important;
@@ -1259,6 +1400,24 @@
       <div class="toast-body">
         <div class="toast-title" id="toastTitle">Straighten Back!</div>
         <div class="toast-desc" id="toastDesc">Check your sitting posture. Drop your shoulders and extend your spine.</div>
+      </div>
+    </div>
+
+    <!-- Mindfulness Bell Modal / Overlay -->
+    <div class="mindfulness-modal-overlay" id="mindfulnessModal" hidden>
+      <div class="mindfulness-card">
+        <button type="button" class="mindfulness-close-btn" id="btnDismissMindfulnessTop" aria-label="Close">✕</button>
+        <div class="mindfulness-ripple-container">
+          <div class="mindfulness-ripple ripple-1"></div>
+          <div class="mindfulness-ripple ripple-2"></div>
+          <div class="mindfulness-ripple ripple-3"></div>
+          <div class="mindfulness-bell-icon">🔔</div>
+        </div>
+        <h2 class="mindfulness-title" id="mindfulnessModalTitle">Chuông chánh niệm</h2>
+        <p class="mindfulness-desc" id="mindfulnessModalDesc">Dừng lại mọi hành động, lời nói và suy nghĩ.<br>Thở sâu và trở về an trú trong hiện tại.</p>
+        <button type="button" class="btn btn-primary mindfulness-action-btn" id="btnDismissMindfulness">
+          <span id="mindfulnessDismissText">Trở về hiện tại</span>
+        </button>
       </div>
     </div>
 
@@ -1552,6 +1711,20 @@
 
             <div class="setting-item">
               <div class="setting-info">
+                <span class="setting-label" data-t="mindfulnessBell">Bell of Mindfulness</span>
+                <span class="setting-desc" data-t="mindfulnessBellDesc">Random bell during focus & long break to pause and return to the present moment</span>
+              </div>
+              <div class="setting-control" style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" class="btn btn-secondary" id="btnTestMindfulnessBell" style="padding: 6px 10px; font-size: 0.78rem; white-space: nowrap;" data-t="testBell">Test Bell</button>
+                <label class="switch">
+                  <input type="checkbox" id="checkboxMindfulnessBell" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
                 <span class="setting-label" data-t="postureAlerts">Posture & Hydration Alerts</span>
                 <span class="setting-desc" data-t="postureAlertsDesc">Gentle pop-up notifications every 20m</span>
               </div>
@@ -1619,6 +1792,9 @@
     let isLongBreak = false;
     let enableAlerts = true;
     let enableNotifications = true;
+    let enableMindfulnessBell = true;
+    let mindfulnessBellTargetTimeLeft = null;
+    let mindfulnessBellTriggeredThisSession = false;
     let isDebugMode = false;
     let currentLang = 'vi'; // Default to Vietnamese
 
@@ -1687,6 +1863,13 @@
         settingLabelLang: "Language / Ngôn ngữ",
         settingDescLang: "Select interface language",
         wellnessReminders: "Wellness Reminders",
+        mindfulnessBell: "Bell of Mindfulness",
+        mindfulnessBellDesc: "Random bell during focus & long break to pause and return to the present moment",
+        mindfulnessBellToastTitle: "🔔 Bell of Mindfulness",
+        mindfulnessBellToastDesc: "Stop all actions, speech, and thoughts. Breathe deeply and rest in the present moment.",
+        mindfulnessBellTabAlert: "🔔 [PAUSE & BREATHE] Bell of Mindfulness",
+        dismissMindfulness: "I am present",
+        testBell: "Test Bell",
         postureAlerts: "Posture & Hydration Alerts",
         postureAlertsDesc: "Gentle pop-up notifications every 20m",
         devDebug: "Developer Debug Mode",
@@ -1790,6 +1973,13 @@
         settingLabelLang: "Language / Ngôn ngữ",
         settingDescLang: "Chọn ngôn ngữ hiển thị",
         wellnessReminders: "Nhắc nhở sức khỏe",
+        mindfulnessBell: "Chuông chánh niệm ngẫu nhiên",
+        mindfulnessBellDesc: "Phát chuông bất ngờ trong phiên tập trung & nghỉ dài để dừng lại và an trú trong hiện tại",
+        mindfulnessBellToastTitle: "🔔 Chuông chánh niệm",
+        mindfulnessBellToastDesc: "Dừng lại mọi hành động, lời nói và suy nghĩ. Thở sâu và trở về an trú trong hiện tại.",
+        mindfulnessBellTabAlert: "🔔 [DỪNG LẠI & AN TRÚ] Chuông chánh niệm",
+        dismissMindfulness: "Trở về hiện tại",
+        testBell: "Nghe thử chuông",
         postureAlerts: "Cảnh báo tư thế & nước",
         postureAlertsDesc: "Hiện thông báo nhẹ nhàng mỗi 20 phút",
         devDebug: "Chế độ lập trình viên",
@@ -2177,12 +2367,22 @@
     const inputCyclesBeforeLongBreak = document.getElementById("inputCyclesBeforeLongBreak");
     const checkboxNotifications = document.getElementById("checkboxNotifications");
     const checkboxAlerts = document.getElementById("checkboxAlerts");
+    const checkboxMindfulnessBell = document.getElementById("checkboxMindfulnessBell");
+    const btnTestMindfulnessBell = document.getElementById("btnTestMindfulnessBell");
     const checkboxDebug = document.getElementById("checkboxDebug");
     const btnSaveSettings = document.getElementById("btnSaveSettings");
     const btnClearData = document.getElementById("btnClearData");
     const cycleBadge = document.getElementById("cycleBadge");
     const cycleBadgeText = document.getElementById("cycleBadgeText");
     const faviconLink = document.getElementById("faviconLink");
+
+    // Mindfulness Modal Elements
+    const mindfulnessModal = document.getElementById("mindfulnessModal");
+    const mindfulnessModalTitle = document.getElementById("mindfulnessModalTitle");
+    const mindfulnessModalDesc = document.getElementById("mindfulnessModalDesc");
+    const btnDismissMindfulness = document.getElementById("btnDismissMindfulness");
+    const btnDismissMindfulnessTop = document.getElementById("btnDismissMindfulnessTop");
+    const mindfulnessDismissText = document.getElementById("mindfulnessDismissText");
 
     // Dialog Elements
     const editTimerDialog = document.getElementById("editTimerDialog");
@@ -2242,6 +2442,15 @@
       // Auto re-acquire wake lock on visibility change (active tab returns)
       document.addEventListener("visibilitychange", handleVisibilityChange);
 
+      // Restore alert title when tab gains focus
+      window.addEventListener("focus", () => {
+        if (alertTitleInterval) {
+          clearInterval(alertTitleInterval);
+          alertTitleInterval = null;
+          if (lastDocumentTitle) document.title = lastDocumentTitle;
+        }
+      });
+
       // Save state on page unload
       window.addEventListener("beforeunload", saveTimerState);
     }
@@ -2253,6 +2462,7 @@
       const storedCycles = localStorage.getItem("cyclesBeforeLongBreak");
       const storedNotifications = localStorage.getItem("enableNotifications");
       const storedAlerts = localStorage.getItem("enableAlerts");
+      const storedMindfulnessBell = localStorage.getItem("enableMindfulnessBell");
       const storedLang = localStorage.getItem("currentLang");
       const storedSound = localStorage.getItem("soundEnabled");
 
@@ -2262,6 +2472,7 @@
       if (storedCycles) cyclesBeforeLongBreak = parseInt(storedCycles, 10);
       if (storedNotifications !== null) enableNotifications = storedNotifications === "true";
       if (storedAlerts !== null) enableAlerts = storedAlerts === "true";
+      if (storedMindfulnessBell !== null) enableMindfulnessBell = storedMindfulnessBell === "true";
       if (storedLang) currentLang = storedLang;
       if (storedSound !== null) soundEnabled = storedSound === "true";
       updateSoundUI();
@@ -2327,6 +2538,7 @@
       inputCyclesBeforeLongBreak.value = cyclesBeforeLongBreak;
       checkboxNotifications.checked = enableNotifications;
       checkboxAlerts.checked = enableAlerts;
+      if (checkboxMindfulnessBell) checkboxMindfulnessBell.checked = enableMindfulnessBell;
       selectLang.value = currentLang;
 
       // Render the dynamic settings list of workouts
@@ -2342,6 +2554,15 @@
       cyclesBeforeLongBreak = Math.max(1, Math.min(12, parseInt(inputCyclesBeforeLongBreak.value, 10) || 4));
       enableNotifications = checkboxNotifications.checked;
       enableAlerts = checkboxAlerts.checked;
+      if (checkboxMindfulnessBell) {
+        const prevBell = enableMindfulnessBell;
+        enableMindfulnessBell = checkboxMindfulnessBell.checked;
+        if (!prevBell && enableMindfulnessBell && timerStatus === 'running') {
+          scheduleMindfulnessBell();
+        } else if (!enableMindfulnessBell) {
+          mindfulnessBellTargetTimeLeft = null;
+        }
+      }
       isDebugMode = checkboxDebug.checked;
       currentLang = selectLang.value;
 
@@ -2372,6 +2593,7 @@
       localStorage.setItem("cyclesBeforeLongBreak", cyclesBeforeLongBreak);
       localStorage.setItem("enableNotifications", enableNotifications);
       localStorage.setItem("enableAlerts", enableAlerts);
+      localStorage.setItem("enableMindfulnessBell", enableMindfulnessBell);
       localStorage.setItem("currentLang", currentLang);
 
       // Serialize dynamic workouts
@@ -2848,17 +3070,58 @@
       }
     }
 
-    function sendWebNotification(title, body) {
+    function sendWebNotification(title, body, options = {}) {
       if (!enableNotifications || !("Notification" in window)) return;
       if (Notification.permission === "granted") {
-        try {
-          new Notification(title, {
-            body: body,
-            icon: "icon.svg",
-            badge: "icon.svg"
+        const notifOptions = Object.assign({
+          body: body,
+          icon: "icon.svg",
+          badge: "icon.svg",
+          vibrate: [400, 200, 400, 200, 800],
+          requireInteraction: true,
+          renotify: true,
+          tag: options.tag || 'focus-station-alert',
+          silent: false
+        }, options);
+
+        const autoCloseMs = typeof options.autoCloseMs === 'number' ? options.autoCloseMs : null;
+
+        // Try Service Worker registration first for robust background/minimized OS notification
+        if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+          navigator.serviceWorker.ready.then((reg) => {
+            if (reg && typeof reg.showNotification === 'function') {
+              reg.showNotification(title, notifOptions);
+              if (autoCloseMs) {
+                setTimeout(() => {
+                  try {
+                    reg.getNotifications({ tag: notifOptions.tag }).then((list) => {
+                      if (list) list.forEach(n => n.close());
+                    }).catch(() => {});
+                  } catch (_) {}
+                }, autoCloseMs);
+              }
+              return;
+            }
+            sendFallbackNotification(title, notifOptions, autoCloseMs);
+          }).catch(() => {
+            sendFallbackNotification(title, notifOptions, autoCloseMs);
           });
-        } catch (e) {}
+        } else {
+          sendFallbackNotification(title, notifOptions, autoCloseMs);
+        }
       }
+    }
+
+    function sendFallbackNotification(title, notifOptions, autoCloseMs) {
+      try {
+        const n = new Notification(title, notifOptions);
+        if (autoCloseMs) {
+          setTimeout(() => { try { n.close(); } catch (_) {} }, autoCloseMs);
+        }
+        n.onclick = () => {
+          try { window.focus(); n.close(); } catch (_) {}
+        };
+      } catch (_) {}
     }
 
     function resetTimer() {
@@ -2887,6 +3150,7 @@
         updateTimerDisplay();
         initHiitSequence();
       }
+      scheduleMindfulnessBell();
       updateCycleBadgeUI();
       saveTimerState();
     }
@@ -2947,6 +3211,12 @@
           if (enableAlerts && currReminderCount > prevReminderCount && currReminderCount > 0) {
             triggerPostureHydrationAlert();
           }
+        }
+
+        // Random mindfulness bell trigger during focus and long break
+        if (enableMindfulnessBell && !mindfulnessBellTriggeredThisSession && mindfulnessBellTargetTimeLeft !== null && timeLeft <= mindfulnessBellTargetTimeLeft) {
+          mindfulnessBellTriggeredThisSession = true;
+          triggerMindfulnessBell();
         }
 
         updateTimerDisplay();
@@ -3275,6 +3545,117 @@
             osc.start(now + idx * 0.14);
             osc.stop(now + idx * 0.14 + 0.7);
           });
+        } else if (type === "breathe-inhale") {
+          // ponytail: multi-oscillator binaural singing bowls suffice; upgrade to multi-sample sound packs if requested.
+          // Inhale 4s swell: starts whisper-soft, swells smoothly over 4s to guide breath expansion to full peak
+          [[432.00, 0.065], [433.80, 0.055], [648.00, 0.025]].forEach(([freq, peakVol]) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.exponentialRampToValueAtTime(peakVol, now + 3.6);
+            gain.gain.linearRampToValueAtTime(0.0001, now + 4.0);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.onended = () => {
+              try { osc.disconnect(); gain.disconnect(); } catch (_) {}
+            };
+            osc.start(now);
+            osc.stop(now + 4.05);
+          });
+        } else if (type === "breathe-hold") {
+          // Hold Full: Tibetan Tingsha chime (864 Hz) strikes at full lungs, rings out for 4s of mindful stillness
+          [[864.00, 0.05], [868.00, 0.04], [2160.00, 0.015]].forEach(([freq, vol]) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.linearRampToValueAtTime(vol, now + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.8);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.onended = () => {
+              try { osc.disconnect(); gain.disconnect(); } catch (_) {}
+            };
+            osc.start(now);
+            osc.stop(now + 3.9);
+          });
+        } else if (type === "breathe-exhale") {
+          // Exhale 4s decrescendo: Deep grounding singing bowl strikes and smoothly fades away over 4s to empty lungs
+          [[216.00, 0.06], [217.20, 0.05], [108.00, 0.04], [432.00, 0.02]].forEach(([freq, vol]) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(vol, now + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.002, now + 3.6);
+            gain.gain.linearRampToValueAtTime(0.0001, now + 4.0);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.onended = () => {
+              try { osc.disconnect(); gain.disconnect(); } catch (_) {}
+            };
+            osc.start(now);
+            osc.stop(now + 4.05);
+          });
+        } else if (type === "breathe-hold-empty") {
+          // Hold Empty: Warm gentle temple bowl (324 Hz) marks empty resting pause for 4s before next breath
+          [[324.00, 0.045], [325.50, 0.035], [648.00, 0.015]].forEach(([freq, vol]) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.linearRampToValueAtTime(vol, now + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.8);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.onended = () => {
+              try { osc.disconnect(); gain.disconnect(); } catch (_) {}
+            };
+            osc.start(now);
+            osc.stop(now + 3.9);
+          });
+        } else if (type === "mindfulness-bell") {
+          // Authentic deep meditation bell (Tibetan singing bowl fundamental & overtones)
+          // Boosted volume, deep 108Hz sub-bass and clear ringing overtones (7.8s sustain)
+          [[108.00, 0.25], [216.00, 0.35], [432.00, 0.30], [648.00, 0.18], [864.00, 0.12], [1296.00, 0.06]].forEach(([freq, vol]) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.linearRampToValueAtTime(vol, now + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 7.8);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.onended = () => {
+              try { osc.disconnect(); gain.disconnect(); } catch (_) {}
+            };
+            osc.start(now);
+            osc.stop(now + 7.9);
+          });
+        } else if (type === "mindfulness-bell-overtone") {
+          // Second chime stroke: shimmering Tibetan Tingsha chime harmonic wave
+          [[432.00, 0.20], [864.00, 0.22], [868.00, 0.18], [1728.00, 0.08]].forEach(([freq, vol]) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.linearRampToValueAtTime(vol, now + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 6.5);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.onended = () => {
+              try { osc.disconnect(); gain.disconnect(); } catch (_) {}
+            };
+            osc.start(now);
+            osc.stop(now + 6.6);
+          });
         }
       } catch (err) {
         // Ignore audio failures if browser restricts autoplay or Web Audio is unavailable
@@ -3297,6 +3678,130 @@
         btnSoundToggle.classList.add("sound-off");
         soundToggleIcon.innerHTML = `<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>`;
         btnSoundToggle.title = currentLang === 'vi' ? "Âm thanh: Tắt" : "Sound Effects: Off";
+      }
+    }
+
+    // ----------------------------------------------------
+    // MINDFULNESS BELL ENGINE (BELL OF MINDFULNESS)
+    // ----------------------------------------------------
+    let mindfulnessBellAudio = null;
+    let alertTitleInterval = null;
+
+    function flashTabTitle(urgentText) {
+      if (alertTitleInterval) clearInterval(alertTitleInterval);
+      let toggle = false;
+
+      alertTitleInterval = setInterval(() => {
+        document.title = toggle ? urgentText : `🔔 ${urgentText}`;
+        toggle = !toggle;
+      }, 750);
+    }
+
+    function playMindfulnessBellSound() {
+      if (!soundEnabled) return;
+      try {
+        if (!mindfulnessBellAudio && typeof Audio !== "undefined") {
+          mindfulnessBellAudio = new Audio("bell sound.mp3");
+        }
+        if (mindfulnessBellAudio) {
+          mindfulnessBellAudio.volume = 1.0;
+          mindfulnessBellAudio.currentTime = 0;
+          const promise = mindfulnessBellAudio.play();
+          if (promise && typeof promise.catch === "function") {
+            promise.catch(() => playSound("mindfulness-bell"));
+          }
+        } else {
+          playSound("mindfulness-bell");
+        }
+      } catch (_) {
+        playSound("mindfulness-bell");
+      }
+    }
+
+    function scheduleMindfulnessBell() {
+      mindfulnessBellTriggeredThisSession = false;
+      if (!enableMindfulnessBell) {
+        mindfulnessBellTargetTimeLeft = null;
+        return;
+      }
+
+      // Bell only rings during focus session and long break
+      const isEligible = currentMode === 'focus' || (currentMode === 'break' && isLongBreak);
+      if (!isEligible) {
+        mindfulnessBellTargetTimeLeft = null;
+        return;
+      }
+
+      const totalSec = (currentMode === 'focus') ? (focusMinutes * 60) : (longBreakMinutes * 60);
+      if (totalSec <= 0) {
+        mindfulnessBellTargetTimeLeft = null;
+        return;
+      }
+
+      // Random target between 15% and 85% of total session duration
+      const randomRatio = 0.15 + Math.random() * 0.70;
+      mindfulnessBellTargetTimeLeft = Math.max(1, Math.round(totalSec * randomRatio));
+    }
+
+    function dismissMindfulnessModal() {
+      if (mindfulnessModal) {
+        mindfulnessModal.classList.remove("active");
+        setTimeout(() => {
+          mindfulnessModal.hidden = true;
+        }, 400);
+      }
+      stationContainer.classList.remove("mindfulness-active");
+      if (alertTitleInterval) {
+        clearInterval(alertTitleInterval);
+        alertTitleInterval = null;
+        if (lastDocumentTitle) document.title = lastDocumentTitle;
+      }
+      // Dismiss active web notifications
+      if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.getNotifications({ tag: 'mindfulness-bell' }).then(list => {
+            if (list) list.forEach(n => n.close());
+          }).catch(() => {});
+        }).catch(() => {});
+      }
+    }
+
+    function triggerMindfulnessBell(isTest = false) {
+      const t = translations[currentLang];
+      playMindfulnessBellSound(); // Purely bell sound.mp3
+      flashScreen();
+
+      // Screen border pulsating highlight while mindfulness modal is open
+      stationContainer.classList.add("mindfulness-active");
+
+      // Flash browser tab title to grab attention when tab is backgrounded
+      flashTabTitle(t.mindfulnessBellTabAlert || "🔔 [DỪNG LẠI & AN TRÚ] Chuông chánh niệm");
+
+      // Vibration pattern for mobile/tablet devices
+      if ("vibrate" in navigator) {
+        try { navigator.vibrate([400, 200, 400, 200, 800]); } catch (_) {}
+      }
+
+      // Show prominent, animated mindfulness modal with ripple rings
+      if (mindfulnessModal) {
+        mindfulnessModalTitle.innerText = t.mindfulnessBellToastTitle || "🔔 Chuông chánh niệm";
+        const descText = t.mindfulnessBellToastDesc || "Dừng lại mọi hành động, lời nói và suy nghĩ. Thở sâu và trở về an trú trong hiện tại.";
+        mindfulnessModalDesc.innerHTML = descText.replace(/\. /g, '.<br>');
+        if (mindfulnessDismissText) {
+          mindfulnessDismissText.innerText = t.dismissMindfulness || "Trở về hiện tại";
+        }
+        mindfulnessModal.hidden = false;
+        (typeof requestAnimationFrame === "function" ? requestAnimationFrame : setTimeout)(() => {
+          mindfulnessModal.classList.add("active");
+        }, 16);
+      }
+
+      if (enableNotifications && !isTest) {
+        sendWebNotification(
+          t.mindfulnessBellToastTitle || "🔔 Chuông chánh niệm",
+          t.mindfulnessBellToastDesc || "Dừng lại mọi hành động, lời nói và suy nghĩ. Thở sâu và trở về an trú trong hiện tại.",
+          { tag: 'mindfulness-bell', requireInteraction: true } // Stays until user manually clicks/dismisses
+        );
       }
     }
 
@@ -3358,7 +3863,9 @@
       }, 15000);
     }
 
-    function showToast(title, desc, permanent = false, statusType = "warning") {
+    let toastTimeout = null;
+
+    function showToast(title, desc, permanent = false, statusType = "warning", duration = 6000) {
       let color = "var(--status-warning)";
       let bg = "rgba(250, 178, 25, 0.1)";
 
@@ -3383,10 +3890,11 @@
       toastDesc.innerText = desc;
 
       alertToast.classList.add("visible");
+      if (toastTimeout) clearTimeout(toastTimeout);
       if (!permanent) {
-        setTimeout(() => {
+        toastTimeout = setTimeout(() => {
           alertToast.classList.remove("visible");
-        }, 6000);
+        }, duration);
       }
     }
 
@@ -3504,6 +4012,18 @@
     // ----------------------------------------------------
     // QUICK RESET (BOX BREATHING) ENGINE
     // ----------------------------------------------------
+    function playBreathingCue(phaseIndex) {
+      if (phaseIndex === 0) {
+        playSound("breathe-inhale");
+      } else if (phaseIndex === 1) {
+        playSound("breathe-hold");
+      } else if (phaseIndex === 2) {
+        playSound("breathe-exhale");
+      } else if (phaseIndex === 3) {
+        playSound("breathe-hold-empty");
+      }
+    }
+
     function startBoxBreathing() {
       // 2-minute session = 120 seconds.
       boxBreathingTimerVal = 4;
@@ -3511,6 +4031,7 @@
       boxBreathingCycleCount = 0;
 
       updateBreathingUI();
+      playBreathingCue(0);
 
       if (timerStatus === 'running') {
         timerStatus = 'paused';
@@ -3544,6 +4065,8 @@
           endBoxBreathing(true);
           return;
         }
+
+        playBreathingCue(boxBreathingPhaseIndex);
       }
       updateBreathingUI();
     }
@@ -3577,6 +4100,7 @@
       const t = translations[currentLang];
 
       if (completed) {
+        playSound("complete");
         showToast(t.resetCompletedTitle, t.resetCompletedDesc, false, "good");
       }
 
@@ -3947,6 +4471,22 @@
       // Settings controls
       btnSaveSettings.addEventListener("click", saveSettings);
       btnClearData.addEventListener("click", clearLocalData);
+      if (btnTestMindfulnessBell) {
+        btnTestMindfulnessBell.addEventListener("click", () => triggerMindfulnessBell(true));
+      }
+
+      // Mindfulness Modal controls
+      if (btnDismissMindfulness) {
+        btnDismissMindfulness.addEventListener("click", dismissMindfulnessModal);
+      }
+      if (btnDismissMindfulnessTop) {
+        btnDismissMindfulnessTop.addEventListener("click", dismissMindfulnessModal);
+      }
+      if (mindfulnessModal) {
+        mindfulnessModal.addEventListener("click", (e) => {
+          if (e.target === mindfulnessModal) dismissMindfulnessModal();
+        });
+      }
 
       // Workout List and Dialog controls
       const btnAddWorkout = document.getElementById("btnAddWorkout");
@@ -4028,9 +4568,13 @@
           return;
         }
 
-        const isAnyDialogOpen = (workoutDialog && workoutDialog.open) || (editTimerDialog && editTimerDialog.open);
+        const isAnyDialogOpen = (workoutDialog && workoutDialog.open) || (editTimerDialog && editTimerDialog.open) || (mindfulnessModal && !mindfulnessModal.hidden);
 
         if (e.key === "Escape") {
+          if (mindfulnessModal && !mindfulnessModal.hidden) {
+            dismissMindfulnessModal();
+            return;
+          }
           if (workoutDialog && workoutDialog.open) workoutDialog.close();
           if (editTimerDialog && editTimerDialog.open) handleEditTimerCancel();
           return;

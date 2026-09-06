@@ -429,6 +429,100 @@ function runSanityCheck() {
     }
     dismissMindfulnessModal();
     console.log('✅ Success: Background mindfulness bell notifications, prominent modal & manual dismissal passed.');
+
+    // Verify Mobile Responsive & Non-Squishing CSS Rules
+    console.log('Running test for mobile responsive & icon non-squish CSS rules...');
+    const requiredRules = [
+      /\.btn-icon\s*\{[^}]*flex-shrink:\s*0/i,
+      /\.btn-icon\s*\{[^}]*aspect-ratio:\s*1\s*\/\s*1/i,
+      /\.indicator-icon\s*\{[^}]*flex-shrink:\s*0/i,
+      /\.sound-toggle-btn\s*\{[^}]*flex-shrink:\s*0/i,
+      /\.brand-logo\s*\{[^}]*flex-shrink:\s*0/i,
+      /\.cycle-badge\s*\{[^}]*flex-shrink:\s*0/i,
+      /\.wakelock-badge\s*\{[^}]*flex-shrink:\s*0/i,
+      /@media\s*\(max-width:\s*440px\)/i,
+      /@media\s*\(max-height:\s*680px\)\s*and\s*\(orientation:\s*portrait\)/i,
+      /#btnStatsShortcut\s*\{[^}]*display:\s*none/i,
+      /#btnStartPause\s*\{[^}]*flex-shrink:\s*0/i
+    ];
+    for (const rule of requiredRules) {
+      if (!rule.test(content)) {
+        throw new Error(`Mobile responsiveness check failed: missing CSS pattern ${rule}`);
+      }
+    }
+    console.log('✅ Success: Mobile responsive & icon non-squish CSS rules verified.');
+
+    // Verify removal of top orange border
+    if (/\.break-mode-active\s+header\s*\{[^}]*border-bottom-color:\s*rgba\(217/i.test(content)) {
+      throw new Error('Break mode header still contains orange border-bottom-color!');
+    }
+    if (/\.alert-toast\s*\{[^}]*border:\s*1px\s+solid\s+var\(--status-warning\)/i.test(content)) {
+      throw new Error('Alert toast still has orange status-warning border!');
+    }
+    console.log('✅ Success: Top orange border removal verified.');
+
+    // Verify minimalist UI elements: quick-check-panel hidden, phase-label hidden, btnResetTimer is icon button
+    if (!/\.quick-check-panel\s*\{[^}]*display:\s*none/i.test(content)) {
+      throw new Error('quick-check-panel is not hidden via display: none!');
+    }
+    if (!/\.phase-label\s*\{[^}]*display:\s*none/i.test(content)) {
+      throw new Error('phase-label is not hidden via display: none!');
+    }
+    if (!/<button[^>]*class="[^"]*btn-icon[^"]*"[^>]*id="btnResetTimer"[^>]*>/i.test(content) && !/<button[^>]*id="btnResetTimer"[^>]*class="[^"]*btn-icon[^"]*"[^>]*>/i.test(content)) {
+      throw new Error('btnResetTimer does not have btn-icon class!');
+    }
+    if (!/\.brand-logo\s*\{[^}]*display:\s*none/i.test(content)) {
+      throw new Error('brand-logo is not hidden via display: none!');
+    }
+    console.log('✅ Success: Minimalist layout assertions verified (hidden posture/hydration, hidden phase label, icon reset button, hidden brand icon).');
+
+    // Verify refined aesthetics for Header and Pomodoro Timer
+    if (!/header\s*\{[^}]*justify-content:\s*center/i.test(content)) {
+      throw new Error('Header is not centered via justify-content: center!');
+    }
+    if (!/\.progress-bar-circle\s*\{[^}]*stroke-width:\s*7/i.test(content)) {
+      throw new Error('Pomodoro timer progress bar does not have refined stroke-width of 7!');
+    }
+    if (!/<button[^>]*class="[^"]*btn-edit-timer[^"]*"[^>]*id="btnEditTimer"/i.test(content) && !/<button[^>]*id="btnEditTimer"[^>]*class="[^"]*btn-edit-timer[^"]*"/i.test(content)) {
+      throw new Error('btnEditTimer does not have btn-edit-timer class!');
+    }
+    if (!/\.growth-wrapper\s*\{[^}]*display:\s*none/i.test(content)) {
+      throw new Error('growth-wrapper icon is not hidden via display: none!');
+    }
+    console.log('✅ Success: Refined Header and Pomodoro timer aesthetic assertions verified.');
+
+    // Verify UI/UX upgrades:
+    // 1. AMOLED auto-dimming & shortcut-hint hidden in AMOLED
+    if (!/body\.amoled-mode\.amoled-idle/i.test(content)) {
+      throw new Error('Missing body.amoled-mode.amoled-idle CSS rule!');
+    }
+    if (!/body\.amoled-mode\s+[^}]*#shortcutHintDisplay/i.test(content)) {
+      throw new Error('shortcutHintDisplay is not hidden in amoled-mode!');
+    }
+
+    // 2. Quick preset chips in editTimerDialog
+    if (!content.includes('class="dialog-chips-row"') || !content.includes('data-preset="25"')) {
+      throw new Error('Quick timer preset chips are missing in editTimerDialog!');
+    }
+
+    // 3. Hold-to-reset CSS
+    if (!content.includes('#btnResetTimer.holding-reset')) {
+      throw new Error('Missing #btnResetTimer.holding-reset CSS rule!');
+    }
+
+    // 4. Box breathing continuous easing
+    if (!/\.breathing-circle-inner\s*\{[^}]*cubic-bezier/i.test(content)) {
+      throw new Error('Missing cubic-bezier transition on .breathing-circle-inner!');
+    }
+
+    // 5. Stats local date parsing & semantic focus color
+    if (!content.includes('var(--color-focus, #3987e5)')) {
+      throw new Error('Stats bar chart does not use isolated var(--color-focus, #3987e5)!');
+    }
+    if (!content.includes('new Date(y, m - 1, d)')) {
+      throw new Error('Stats chart does not parse local date components (y, m - 1, d)!');
+    }
+    console.log('✅ Success: Comprehensive UI/UX upgrade assertions verified.');
   } catch (err) {
     console.error('❌ Sanity check failed!');
     console.error(err);

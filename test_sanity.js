@@ -684,6 +684,21 @@ function runSanityCheck() {
       throw new Error('updateHideTimerDigitsUI did not remove hide-timer-digits class when disabled!');
     }
     console.log('✅ Success: Hide Timer Digits option & UI tests passed.');
+
+    // 7. Verify Service Worker PWA caching strategy
+    console.log('Running test for Service Worker caching...');
+    const swPath = path.join(__dirname, 'sw.js');
+    if (!fs.existsSync(swPath)) {
+      throw new Error('sw.js does not exist!');
+    }
+    const swContent = fs.readFileSync(swPath, 'utf8');
+    if (!swContent.includes('focus-station-v2')) {
+      throw new Error('sw.js CACHE_NAME must be updated to focus-station-v2!');
+    }
+    if (!swContent.includes("event.request.mode === 'navigate'")) {
+      throw new Error('sw.js must handle navigate requests with network-first and offline fallback!');
+    }
+    console.log('✅ Success: Service Worker PWA caching verified.');
   } catch (err) {
     console.error('❌ Sanity check failed!');
     console.error(err);

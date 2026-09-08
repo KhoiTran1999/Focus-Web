@@ -7,23 +7,24 @@
 ## 🌟 Tính năng chính
 
 ### 1. ⏱️ Quản lý thời gian & Chu kỳ Pomodoro
-- **Linh hoạt cấu hình**: Tùy chỉnh số phút Focus, Short Break, Long Break và số chu kỳ trước khi nghỉ dài.
-- **Điều chỉnh trực tiếp**: Nhấp vào biểu tượng chỉnh sửa để cập nhật thời gian còn lại mà không cần reset.
-- **Biểu tượng tăng trưởng (Sprout)**: Mầm cây lớn dần theo tiến độ buổi tập trung.
-- **Chống tắt màn hình (Screen Wake Lock API)**: Giữ màn hình điện thoại/tablet phụ trên bàn làm việc luôn sáng.
-- **Chế độ AMOLED Fullscreen**: Nền đen tuyệt đối tiết kiệm pin và tối ưu hiển thị như một chiếc đồng hồ để bàn.
+- **Hộp thoại Cấu hình & Tiến độ (Settings & Progress Modal)**: Nhấp trực tiếp vào badge chu kỳ trên đồng hồ để xem tiến độ trực quan, tùy chỉnh số phút (Focus, Short Break, Long Break), số chu kỳ, chọn nhanh các preset hoặc reset chu kỳ / reset đồng hồ.
+- **Ẩn chữ số đếm ngược (Hide Timer Digits / Minimalist Mode)**: Tùy chọn ẩn số đếm ngược để tập trung tối đa, chỉ giữ lại vòng tròn tiến độ; chạm nhẹ hoặc rê chuột để xem thời gian còn lại.
+- **Điều chỉnh trực tiếp**: Nhấp vào biểu tượng chỉnh sửa (bút chì) để cập nhật thời gian còn lại mà không cần reset phiên.
+- **Biểu tượng tăng trưởng (Sprout)**: Cây mầm phát triển dần theo % thời gian hoàn thành phiên tập trung.
+- **Chống tắt màn hình (Screen Wake Lock API)**: Giữ màn hình điện thoại/tablet phụ trên bàn làm việc luôn sáng ngầm liên tục.
+- **Chế độ AMOLED Fullscreen**: Nền đen tuyệt đối tiết kiệm pin màn hình OLED, tự động triệt tiêu thanh cuộn trên desktop/mobile.
 
 ### 2. 🧘 Chuông chánh niệm ngẫu nhiên (Mindfulness Bell)
-- Tự động điểm chuông ngẫu nhiên từ khi mở ứng dụng (hoạt động độc lập, không phụ thuộc phiên Pomodoro).
-- Nhắc nhở người dùng tạm dừng vài giây, hít thở sâu, thả lỏng cơ thể.
-- Hỗ trợ thông báo tab nền và âm thanh chuông chân thực.
+- Tự động điểm chuông ngẫu nhiên độc lập phiên làm việc, nhắc nhở thả lỏng cơ thể và hít thở sâu.
+- **Thuật toán Wake Catch-up**: Tự động bù trừ thời gian khi thiết bị ngủ (sleep) hoặc tab bị trình duyệt tạm dừng chạy nền, bảo đảm nhịp chuông luôn ổn định.
+- **Hộp thoại tương tác nổi bật**: Hiển thị popup nhắc nhở chánh niệm, hỗ trợ đóng nhanh bằng phím cứng hoặc thao tác chạm.
 
 ### 3. 🫁 Bài tập thở hộp (Box Breathing - 2 phút)
 - Chu kỳ thở vuông chuẩn 4s (Hít vào 4s - Giữ 4s - Thở ra 4s - Giữ rỗng 4s).
-- Hướng dẫn trực quan bằng vòng tròn co giãn và tín hiệu âm thanh procedural Web Audio.
+- Vòng tròn co giãn trực quan kết hợp âm thanh procedural tạo bởi Web Audio API nhẹ nhàng, không cần tải file ngoài.
 
 ### 4. 🤸 Giãn cơ (Desk Stretches) & HIIT Calisthenics
-- **5 động tác giãn cơ tại bàn**: Nghiêng cổ, xoay vai, căng cổ tay, mở ngực, vặn cột sống (ảnh SVG động mượt mà).
+- **5 động tác giãn cơ tại bàn**: Nghiêng cổ, xoay vai, căng cổ tay, mở ngực, vặn cột sống (ảnh SVG động mượt mà, siêu nhẹ).
 - **Bộ bài tập HIIT / Bodyweight phong phú**: Hít đất, Squat, Jumping Jacks, Hít xà (Pull-ups), Plank, Burpees,... kèm ảnh động WebP hướng dẫn tư thế chuẩn.
 - **Bộ đếm Reps / Sets thông minh**: Tự động xoay tua bài tập không trùng lặp, lưu tiến độ bài tập.
 
@@ -32,21 +33,29 @@
 - Lưu trữ hoàn toàn tại local (`localStorage`), tự động tính toán thời gian trôi qua khi chuyển tab hoặc tắt mở lại.
 
 ### 6. 📱 PWA & Âm thanh Web Audio
-- Cài đặt như ứng dụng native trên máy tính, điện thoại, tablet thông qua Web App Manifest & Service Worker (`sw.js`).
-- Hỗ trợ đầy đủ âm thanh procedural nhẹ nhàng (Web Audio API) và file chuông mẫu (`bell sound.mp3`).
-- Đa ngôn ngữ: Hỗ trợ chuyển đổi nhanh giữa Tiếng Việt và Tiếng Anh.
+- **PWA Service Worker v2**: Chiến lược cache thông minh (Network-first cho navigation để cập nhật mã nguồn mới nhất khi online, Cache-first cho static assets/hình ảnh/âm thanh bảo đảm offline 100%).
+- Cài đặt như ứng dụng native trên máy tính, điện thoại, tablet thông qua Web App Manifest (`manifest.json`).
+- Đa ngôn ngữ: Hỗ trợ chuyển đổi mượt mà giữa Tiếng Việt và Tiếng Anh.
+
+---
+
+## ⚡ Tối ưu hóa hiệu năng (Performance Highlights)
+
+- **Zero-dependency**: Hoàn toàn không phụ thuộc thư viện bên ngoài (React, Vue, Tailwind, v.v.), dung lượng siêu nhẹ, nạp tức thì ngay cả trên các thiết bị đời cũ.
+- **Delta-time Background Tracking**: Dùng mốc thời gian thực (`Date.now()`) để tính toán độ trôi, khắc phục triệt để hiện tượng trễ timer do trình duyệt throttle `setInterval` ở tab nền.
+- **DOM Update Throttling**: Chỉ can thiệp cập nhật DOM và document title khi giá trị chuỗi thời gian thực sự thay đổi, giảm thiểu tối đa tải CPU/GPU.
+- **Tối ưu năng lượng cho Desk Station**: Chế độ AMOLED hạn chế tối đa điểm ảnh phát sáng; SVG/CSS animations thuần không ngốn tài nguyên.
 
 ---
 
 ## ⌨️ Phím tắt (Shortcuts)
 
+Để tối ưu cho màn hình cảm ứng để bàn và tránh kích hoạt nhầm khi thao tác tay, các phím bấm toàn cục đã được tinh giản:
+
 | Phím | Chức năng |
 | :---: | :--- |
-| `Space` | Bắt đầu / Tạm dừng đồng hồ |
-| `S` | Bỏ qua (Skip) phiên tập trung hoặc phiên nghỉ hiện tại |
-| `M` | Bật / Tắt âm thanh (Mute/Unmute) |
-| `F` | Bật / Tắt chế độ AMOLED Fullscreen |
-| `Esc` | Đóng hộp thoại / Tắt thông báo chuông chánh niệm |
+| `Esc` | Đóng bất kỳ hộp thoại đang mở (Pomodoro modal, chỉnh giờ, bài tập, chuông chánh niệm) |
+| `Space` / `Enter` | Tắt nhanh thông báo chuông chánh niệm khi hộp thoại hiển thị |
 
 ---
 
@@ -83,7 +92,10 @@ Bộ test kiểm tra:
 - Khả năng lưu/phục hồi trạng thái Timer vào `localStorage`.
 - Chuyển đổi chu kỳ Pomodoro & Long Break.
 - Tín hiệu âm thanh bài tập thở hộp (Box Breathing).
-- Tính năng lập lịch & kích hoạt chuông chánh niệm (Mindfulness Bell).
+- Tính năng lập lịch, wake catch-up & kích hoạt chuông chánh niệm (Mindfulness Bell).
+- Hộp thoại Cấu hình Pomodoro & kiểm soát tiến độ chu kỳ (Settings & Progress Modal).
+- Tính năng ẩn chữ số đếm ngược (Hide Timer Digits).
+- Chiến lược caching của Service Worker v2.
 
 ---
 
@@ -92,17 +104,10 @@ Bộ test kiểm tra:
 ```text
 Focus-Web/
 ├── index.html          # Toàn bộ giao diện, styles (CSS), và logic điều khiển (Single-file)
-├── sw.js               # Service Worker quản lý bộ nhớ đệm cache & offline mode
+├── sw.js               # Service Worker quản lý bộ nhớ đệm cache v2 & offline mode
 ├── manifest.json       # Cấu hình PWA Web App Manifest
 ├── icon.svg            # Biểu tượng ứng dụng vector
 ├── bell sound.mp3      # Âm thanh chuông chánh niệm
 ├── test_sanity.js      # Kịch bản kiểm thử tự động với Node.js stdlib
 └── listWorkoutGif/     # Thư mục chứa ảnh động WebP hướng dẫn bài tập HIIT
 ```
-
----
-
-## 🛠️ Công nghệ sử dụng
-- **HTML5, CSS3** (Flexbox, Grid, CSS Variables, Responsive Viewports cho Phone/Tablet/Desktop).
-- **Modern JavaScript (ES6+)**.
-- **Web APIs**: Screen Wake Lock API, Web Audio API, Service Worker API, LocalStorage, Fullscreen API.

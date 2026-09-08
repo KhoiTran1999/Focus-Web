@@ -1,7 +1,7 @@
 // Service Worker for Focus & Wellness Desk Station
 // Provides offline caching for reliable desk phone / tablet usage
 
-const CACHE_NAME = 'focus-station-v1';
+const CACHE_NAME = 'focus-station-v2';
 
 const PRECACHE_ASSETS = [
   './',
@@ -30,7 +30,23 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Navigation or asset requests: Cache first, fallback to network
+  // Navigation request: Network first with cache fallback (ensures fresh HTML, offline-ready)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Static assets: Cache first, fallback to network
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -49,11 +65,6 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => {
-        // Offline fallback
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
       });
     })
   );

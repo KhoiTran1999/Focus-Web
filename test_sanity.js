@@ -546,6 +546,12 @@ function runSanityCheck() {
     if (!content.includes('new Date(y, m - 1, d)')) {
       throw new Error('Stats chart does not parse local date components (y, m - 1, d)!');
     }
+
+    // 6. View transition assertion (scoped CSS animation avoiding toast overlay glitches)
+    if (!content.includes('.view:not(.hidden)') || !content.includes('viewFadeIn')) {
+      throw new Error('Smooth view transition animation missing in index.html!');
+    }
+
     console.log('✅ Success: Comprehensive UI/UX upgrade assertions verified.');
 
     // 6. Test Pomodoro Settings & Progress Modal

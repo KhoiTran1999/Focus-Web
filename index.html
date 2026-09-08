@@ -835,6 +835,7 @@
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
+      cursor: pointer;
     }
 
     .toast-icon-container {
@@ -1598,18 +1599,24 @@
       text-align: center;
     }
 
-    /* Animation for smooth view transition without changing JS logic */
+    /* ponytail: Scoped CSS view transition without global snapshotting; avoids glitching toast overlays */
     .view:not(.hidden) {
-      animation: viewFadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: viewFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
     @keyframes viewFadeIn {
       from {
         opacity: 0;
-        transform: translateY(12px);
+        transform: scale(0.985);
       }
       to {
         opacity: 1;
-        transform: translateY(0);
+        transform: scale(1);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .view:not(.hidden) {
+        animation: none !important;
       }
     }
 
@@ -3500,6 +3507,7 @@
     // ----------------------------------------------------
     // VIEW CONTROLLER
     // ----------------------------------------------------
+    // ponytail: Direct view toggle keeps floating toast overlays completely glitch-free
     function switchView(viewName) {
       if (viewName !== 'focus' && document.body.classList.contains("amoled-mode")) {
         toggleAmoledMode(false);
@@ -5284,6 +5292,17 @@
 
       // Breathing controls
       btnExitBreathing.addEventListener("click", () => endBoxBreathing(false));
+
+      // Alert Toast tap to dismiss
+      if (alertToast) {
+        alertToast.addEventListener("click", () => {
+          alertToast.classList.remove("visible");
+          if (toastTimeout) {
+            clearTimeout(toastTimeout);
+            toastTimeout = null;
+          }
+        });
+      }
 
       // Stats controls
       btnBackFromStats.addEventListener("click", switchToActiveTimerView);

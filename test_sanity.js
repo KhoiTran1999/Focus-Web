@@ -513,12 +513,15 @@ function runSanityCheck() {
     console.log('✅ Success: Refined Header and Pomodoro timer aesthetic assertions verified.');
 
     // Verify UI/UX upgrades:
-    // 1. AMOLED auto-dimming & shortcut-hint hidden in AMOLED
+    // 1. AMOLED auto-dimming & shortcut-hint hidden in AMOLED, scrollbar suppression
     if (!/body\.amoled-mode\.amoled-idle/i.test(content)) {
       throw new Error('Missing body.amoled-mode.amoled-idle CSS rule!');
     }
     if (!/body\.amoled-mode\s+[^}]*#shortcutHintDisplay/i.test(content)) {
       throw new Error('shortcutHintDisplay is not hidden in amoled-mode!');
+    }
+    if (!/body\.amoled-mode\s*\{[^}]*overflow:\s*hidden/i.test(content) || !/scrollbar-width:\s*none/i.test(content)) {
+      throw new Error('Missing overflow: hidden or scrollbar-width: none in amoled-mode!');
     }
 
     // 2. Quick preset chips in editTimerDialog

@@ -1386,9 +1386,27 @@
     }
 
     /* AMOLED Minimalist Zoom Mode styles */
+    html:has(body.amoled-mode),
+    html.amoled-mode,
     body.amoled-mode {
       background: #000000 !important;
       background-color: #000000 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    :fullscreen,
+    :-webkit-full-screen {
+      overflow: hidden !important;
+    }
+    html.amoled-mode::-webkit-scrollbar,
+    body.amoled-mode::-webkit-scrollbar,
+    body.amoled-mode *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
     body.amoled-mode .station-container {
       background: #000000 !important;
@@ -1400,6 +1418,7 @@
       max-width: 100% !important;
       width: 100vw !important;
       border-radius: 0 !important;
+      overflow: hidden !important;
     }
     body.amoled-mode header,
     body.amoled-mode nav,
@@ -1422,6 +1441,8 @@
     body.amoled-mode .view-content {
       padding: 10px !important;
       justify-content: center !important;
+      overflow: hidden !important;
+      scrollbar-width: none !important;
     }
     body.amoled-mode .progress-container {
       width: 320px !important;
@@ -4238,6 +4259,7 @@
 
       if (isAmoled) {
         document.body.classList.add("amoled-mode");
+        if (document.documentElement) document.documentElement.classList.add("amoled-mode");
         resetAmoledIdleTimer();
         if (amoledToggleIcon) {
           amoledToggleIcon.innerHTML = `<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>`;
@@ -4249,6 +4271,7 @@
         }
       } else {
         document.body.classList.remove("amoled-mode");
+        if (document.documentElement) document.documentElement.classList.remove("amoled-mode");
         document.body.classList.remove("amoled-idle");
         clearTimeout(amoledIdleTimeout);
         if (amoledToggleIcon) {

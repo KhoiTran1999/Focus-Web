@@ -609,6 +609,7 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
+      overflow: visible;
     }
 
     .progress-bg-circle {
@@ -620,12 +621,190 @@
     .progress-bar-circle {
       fill: none;
       stroke: var(--accent);
+      stroke: url(#timerProgressGradient);
       stroke-width: 7;
       stroke-linecap: round;
       stroke-dasharray: 754; /* 2 * PI * 120 (radius) */
-      stroke-dashoffset: 754;
+      stroke-dashoffset: 0;
       transition: stroke-dashoffset 1s linear, stroke 0.5s ease, filter 0.5s ease;
       filter: drop-shadow(0 0 8px var(--accent-muted)) drop-shadow(0 0 2px var(--accent));
+    }
+
+    /* Glowing tip indicator dot */
+    .progress-indicator-dot {
+      fill: #ffffff;
+      stroke: var(--accent);
+      stroke-width: 2.5;
+      filter: drop-shadow(0 0 6px var(--accent)) drop-shadow(0 0 10px #ffffff);
+      transition: cx 1s linear, cy 1s linear, opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    /* Hover preview ghost dot */
+    .progress-preview-dot {
+      fill: var(--accent);
+      stroke: #ffffff;
+      stroke-width: 1.5;
+      opacity: 0;
+      pointer-events: none;
+      filter: drop-shadow(0 0 4px var(--accent));
+      transition: opacity 0.2s ease;
+    }
+
+    /* Calm, meditative breathing pulse with gentle visibility (6.5s rhythm) */
+    @keyframes timerRingPulse {
+      0%, 100% {
+        opacity: 0.22;
+        filter: brightness(0.38) saturate(0.65) drop-shadow(0 0 2px var(--accent-muted));
+      }
+      50% {
+        opacity: 1;
+        filter: brightness(1.25) saturate(1.35) drop-shadow(0 0 7px var(--accent)) drop-shadow(0 0 16px var(--accent-glow));
+      }
+    }
+
+    @keyframes indicatorDotPulse {
+      0%, 100% {
+        opacity: 0.22;
+        filter: brightness(0.4) drop-shadow(0 0 1px var(--accent));
+      }
+      50% {
+        opacity: 1;
+        filter: brightness(1.3) drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 10px var(--accent)) drop-shadow(0 0 14px var(--accent-glow));
+      }
+    }
+
+    /* Ambient specular contact & natural smooth plane light cast under timer ring */
+    .progress-container::before {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20%;
+      height: 4px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at 50% 50%, #ffffff 0%, var(--accent-hover) 35%, var(--accent) 70%, transparent 100%);
+      filter: blur(1.5px);
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 0;
+      transition: opacity 0.6s ease, filter 0.6s ease, transform 0.6s ease;
+    }
+
+    .progress-container::after {
+      content: '';
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      transform-origin: 50% 30%;
+      transform: translateX(-50%) perspective(240px) rotateX(56deg);
+      width: 52%;
+      height: 30px;
+      border-radius: 50%;
+      background: radial-gradient(
+        ellipse 65% 55% at 50% 35%,
+        var(--accent) 0%,
+        var(--accent-glow) 28%,
+        var(--accent-muted) 55%,
+        transparent 80%
+      );
+      filter: blur(5px);
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 0;
+      transition: opacity 0.6s ease, filter 0.6s ease, transform 0.6s ease;
+    }
+
+    /* Synchronized horizontal plane light cast pulse (6.5s calm breathing wave) */
+    @keyframes surfaceContactPulse {
+      0%, 100% {
+        opacity: 0.08;
+        transform: translateX(-50%) scaleX(0.9);
+        filter: blur(1.2px) brightness(0.4);
+      }
+      50% {
+        opacity: 0.7;
+        transform: translateX(-50%) scaleX(1.05);
+        filter: blur(2px) brightness(1.25) saturate(1.25);
+      }
+    }
+
+    @keyframes surfacePlaneLightCast {
+      0%, 100% {
+        opacity: 0.06;
+        transform: translateX(-50%) perspective(240px) rotateX(56deg) scale(0.9);
+        filter: blur(2.5px) brightness(0.4);
+      }
+      50% {
+        opacity: 0.58;
+        transform: translateX(-50%) perspective(240px) rotateX(56deg) scale(1.05);
+        filter: blur(6px) brightness(1.2) saturate(1.25);
+      }
+    }
+
+    .progress-container.timer-running .progress-bar-circle {
+      animation: timerRingPulse 6.5s ease-in-out infinite;
+    }
+
+    .progress-container.timer-running .progress-indicator-dot {
+      animation: indicatorDotPulse 6.5s ease-in-out infinite;
+    }
+
+    .progress-container.timer-running::before {
+      animation: surfaceContactPulse 6.5s ease-in-out infinite;
+    }
+
+    .progress-container.timer-running::after {
+      animation: surfacePlaneLightCast 6.5s ease-in-out infinite;
+    }
+
+    .progress-container.timer-paused .progress-bar-circle {
+      opacity: 0.82;
+      filter: drop-shadow(0 0 4px var(--accent-muted));
+    }
+
+    .progress-container.timer-paused .progress-indicator-dot {
+      opacity: 0.7;
+    }
+
+    .progress-container.timer-paused::before {
+      opacity: 0.22;
+      transform: translateX(-50%) scaleX(0.95);
+      filter: blur(1.5px);
+    }
+
+    .progress-container.timer-paused::after {
+      opacity: 0.16;
+      transform: translateX(-50%) perspective(240px) rotateX(56deg) scale(0.95);
+      filter: blur(4px);
+    }
+
+    /* Floating preview tooltip for hover / click on ring */
+    .ring-preview-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(18, 22, 31, 0.94);
+      border: 1px solid var(--accent);
+      color: var(--text-primary, #ffffff);
+      font-size: 0.78rem;
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+      padding: 4px 10px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 8px var(--accent-muted);
+      z-index: 10;
+      white-space: nowrap;
+      transform: translate(-50%, -130%);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .ring-preview-tooltip.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -140%);
     }
 
     /* Growth Animation Inside Circle */
@@ -1449,6 +1628,8 @@
       width: 320px !important;
       height: 320px !important;
       margin-bottom: 30px !important;
+      background: none !important;
+      box-shadow: none !important;
     }
     body.amoled-mode .time-digits {
       font-size: 4.2rem !important;
@@ -1989,10 +2170,19 @@
 
         <div class="timer-section">
           <div class="progress-container" id="progressContainer">
-            <svg class="progress-svg" viewBox="0 0 260 260">
+            <svg class="progress-svg" viewBox="0 0 260 260" overflow="visible">
+              <defs>
+                <linearGradient id="timerProgressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="var(--accent-hover, #4a94ec)" />
+                  <stop offset="100%" stop-color="var(--accent, #3987e5)" />
+                </linearGradient>
+              </defs>
               <circle class="progress-bg-circle" cx="130" cy="130" r="120"></circle>
               <circle class="progress-bar-circle" id="focusProgressBar" cx="130" cy="130" r="120"></circle>
+              <circle class="progress-indicator-dot" id="progressIndicatorDot" cx="250" cy="130" r="4.5"></circle>
+              <circle class="progress-preview-dot" id="progressPreviewDot" cx="130" cy="130" r="3.5"></circle>
             </svg>
+            <div class="ring-preview-tooltip" id="ringPreviewTooltip" aria-hidden="true"></div>
             <!-- Minimal SVG Tree/Energy graphic -->
             <div class="growth-wrapper">
               <svg class="growth-svg" id="growthSvg" viewBox="0 0 24 24">
@@ -2967,6 +3157,9 @@
     const timerDigits = document.getElementById("timerDigits");
     const timerPhaseLabel = document.getElementById("timerPhaseLabel");
     const focusProgressBar = document.getElementById("focusProgressBar");
+    const progressIndicatorDot = document.getElementById("progressIndicatorDot");
+    const progressPreviewDot = document.getElementById("progressPreviewDot");
+    const ringPreviewTooltip = document.getElementById("ringPreviewTooltip");
     const growthSvg = document.getElementById("growthSvg");
     const growthPath = document.getElementById("growthPath");
     const wakeLockBadge = document.getElementById("wakeLockBadge");
@@ -3566,11 +3759,23 @@
         btnStartPause.classList.add("btn-secondary");
         playPauseIcon.innerHTML = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`;
         playPauseText.innerText = t.pauseFocus;
+        if (progressContainer) {
+          progressContainer.classList.add("timer-running");
+          progressContainer.classList.remove("timer-paused");
+        }
       } else {
         btnStartPause.classList.remove("btn-secondary");
         btnStartPause.classList.add("btn-primary");
         playPauseIcon.innerHTML = `<path d="M8 5v14l11-7z"/>`;
         playPauseText.innerText = (timerStatus === 'paused') ? t.resumeFocus : t.startFocus;
+        if (progressContainer) {
+          progressContainer.classList.remove("timer-running");
+          if (timerStatus === 'paused') {
+            progressContainer.classList.add("timer-paused");
+          } else {
+            progressContainer.classList.remove("timer-paused");
+          }
+        }
       }
     }
 
@@ -4120,8 +4325,24 @@
 
     function updateProgressBar(ratio) {
       const circleCircumference = 754; // 2 * PI * r (r=120)
-      const offset = circleCircumference * ratio;
+      // ponytail: ratio is remaining time fraction (1 -> 0); inverted offset keeps ring lit initially until drain
+      const clamped = Math.max(0, Math.min(1, ratio));
+      const offset = circleCircumference * (1 - clamped);
       focusProgressBar.style.strokeDashoffset = offset;
+
+      if (progressIndicatorDot) {
+        if (clamped <= 0.001) {
+          progressIndicatorDot.style.opacity = "0";
+        } else {
+          progressIndicatorDot.style.opacity = "1";
+          // In SVG coordinates rotated -90deg, 12h is angle 0
+          const angle = clamped * 2 * Math.PI;
+          const dotX = 130 + 120 * Math.cos(angle);
+          const dotY = 130 + 120 * Math.sin(angle);
+          progressIndicatorDot.setAttribute("cx", dotX.toFixed(2));
+          progressIndicatorDot.setAttribute("cy", dotY.toFixed(2));
+        }
+      }
     }
 
     function setSproutStage(percentDone) {
@@ -5241,10 +5462,83 @@
       e.target.value = "";
     }
 
+    let ringTooltipTimer = null;
+    function setupProgressRingInteractions() {
+      if (!progressContainer || !ringPreviewTooltip) return;
+
+      function onRingPointer(e) {
+        if (currentMode !== 'focus') {
+          hideRingPreview();
+          return;
+        }
+
+        const rect = (typeof progressContainer.getBoundingClientRect === 'function')
+          ? progressContainer.getBoundingClientRect()
+          : { left: 0, top: 0, width: 260, height: 260 };
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        const x = (typeof e.clientX === 'number') ? (e.clientX - rect.left) : cx;
+        const y = (typeof e.clientY === 'number') ? (e.clientY - rect.top) : (cy - 120);
+        const dx = x - cx;
+        const dy = y - cy;
+        const dist = Math.hypot(dx, dy);
+
+        // Ring band detection: radius is 120 / 260 = ~46% of container width
+        const scale = rect.width / 260;
+        const minR = 85 * scale;
+        const maxR = 145 * scale;
+
+        if (dist < minR || dist > maxR) {
+          hideRingPreview();
+          return;
+        }
+
+        // Angle from 12 o'clock clockwise: [0, 2PI]
+        let angle = Math.atan2(dy, dx) + Math.PI / 2;
+        if (angle < 0) angle += 2 * Math.PI;
+
+        const fraction = angle / (2 * Math.PI); // 0 at 12h, 0.5 at 6h, 1 at 12h
+        const totalDuration = focusMinutes * 60;
+        // Remaining time corresponding to this clockwise position on the ring
+        const targetSeconds = Math.max(0, Math.round((1 - fraction) * totalDuration));
+        const m = Math.floor(targetSeconds / 60);
+        const s = targetSeconds % 60;
+        const formatted = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        const pct = Math.round((1 - fraction) * 100);
+
+        ringPreviewTooltip.textContent = `${formatted} (${pct}%)`;
+        ringPreviewTooltip.style.left = `${Math.round(x)}px`;
+        ringPreviewTooltip.style.top = `${Math.round(y)}px`;
+        ringPreviewTooltip.classList.add("visible");
+
+        if (progressPreviewDot) {
+          // In SVG coordinates rotated -90deg, 12h is angle 0
+          const svgAngle = fraction * 2 * Math.PI;
+          progressPreviewDot.setAttribute("cx", (130 + 120 * Math.cos(svgAngle)).toFixed(2));
+          progressPreviewDot.setAttribute("cy", (130 + 120 * Math.sin(svgAngle)).toFixed(2));
+          progressPreviewDot.style.opacity = "0.75";
+        }
+      }
+
+      function hideRingPreview() {
+        if (ringPreviewTooltip) ringPreviewTooltip.classList.remove("visible");
+        if (progressPreviewDot) progressPreviewDot.style.opacity = "0";
+      }
+
+      progressContainer.addEventListener("pointermove", onRingPointer);
+      progressContainer.addEventListener("pointerleave", hideRingPreview);
+      progressContainer.addEventListener("pointerdown", (e) => {
+        onRingPointer(e);
+        clearTimeout(ringTooltipTimer);
+        ringTooltipTimer = setTimeout(hideRingPreview, 2500);
+      });
+    }
+
     // ----------------------------------------------------
     // EVENT LISTENERS SETUP
     // ----------------------------------------------------
     function setupEventListeners() {
+      setupProgressRingInteractions();
       // Nav Tabs switching
       navFocus.addEventListener("click", switchToActiveTimerView);
       navStats.addEventListener("click", () => switchView('stats'));

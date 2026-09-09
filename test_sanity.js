@@ -50,11 +50,17 @@ function runSanityCheck() {
       },
       getElementById: (id) => {
         if (!elementCache[id]) {
+          const classSet = new Set();
           elementCache[id] = {
             addEventListener: () => {},
-            classList: { add: () => {}, remove: () => {} },
+            classList: {
+              _classes: classSet,
+              add: function(...cls) { cls.forEach(c => classSet.add(c)); },
+              remove: function(...cls) { cls.forEach(c => classSet.delete(c)); },
+              contains: function(c) { return classSet.has(c); }
+            },
             style: {},
-            setAttribute: () => {},
+            setAttribute: function(attr, val) { this[attr] = val; (this.attributes = this.attributes || {})[attr] = val; },
             appendChild: () => {},
             querySelectorAll: () => [],
             cloneNode: function() { return Object.assign({}, this); },
@@ -228,6 +234,87 @@ function runSanityCheck() {
       throw new Error(`Expected timeLeft to be 1530, got ${newTimeLeft}`);
     }
     console.log('✅ Success: Timer edit submit test passed.');
+
+    // Test time ring progress bar (lit initially at ratio=1, empty/off at ratio=0)
+    console.log('Running test for time ring progress bar inversion...');
+    const updateProgressBar = context.updateProgressBar;
+    const barEl = mockWindow.document.getElementById('focusProgressBar');
+    if (typeof updateProgressBar !== 'function' || !barEl) {
+      throw new Error('updateProgressBar or focusProgressBar element missing!');
+    }
+    updateProgressBar(1);
+    if (barEl.style.strokeDashoffset !== 0) {
+      throw new Error(`Expected strokeDashoffset to be 0 initially at ratio=1, got ${barEl.style.strokeDashoffset}`);
+    }
+    updateProgressBar(0);
+    if (barEl.style.strokeDashoffset !== 754) {
+      throw new Error(`Expected strokeDashoffset to be 754 at ratio=0, got ${barEl.style.strokeDashoffset}`);
+    }
+    updateProgressBar(0.5);
+    if (barEl.style.strokeDashoffset !== 377) {
+      throw new Error(`Expected strokeDashoffset to be 377 at ratio=0.5, got ${barEl.style.strokeDashoffset}`);
+    }
+
+    // Test progressIndicatorDot tip coordinates and visibility
+    const dotEl = mockWindow.document.getElementById('progressIndicatorDot');
+    if (!dotEl) {
+      throw new Error('progressIndicatorDot element is missing from mock DOM!');
+    }
+    updateProgressBar(1);
+    if (dotEl.cx !== '250.00' || dotEl.cy !== '130.00' || dotEl.style.opacity !== '1') {
+      throw new Error(`Expected progressIndicatorDot at (250.00, 130.00) with opacity 1 at ratio=1, got (${dotEl.cx}, ${dotEl.cy}, op=${dotEl.style.opacity})`);
+    }
+    updateProgressBar(0.5);
+    if (dotEl.cx !== '10.00' || dotEl.cy !== '130.00' || dotEl.style.opacity !== '1') {
+      throw new Error(`Expected progressIndicatorDot at (10.00, 130.00) with opacity 1 at ratio=0.5, got (${dotEl.cx}, ${dotEl.cy}, op=${dotEl.style.opacity})`);
+    }
+    updateProgressBar(0);
+    if (dotEl.style.opacity !== '0') {
+      throw new Error(`Expected progressIndicatorDot opacity to be '0' at ratio=0, got ${dotEl.style.opacity}`);
+    }
+
+    // Test progressContainer running and paused classes via updatePlayPauseButtonUI
+    const pContainer = mockWindow.document.getElementById('progressContainer');
+    const updatePlayPauseButtonUI = context.updatePlayPauseButtonUI;
+    if (pContainer && typeof updatePlayPauseButtonUI === 'function') {
+      vm.runInContext("timerStatus = 'running';", context);
+      updatePlayPauseButtonUI();
+      if (!pContainer.classList.contains('timer-running') || pContainer.classList.contains('timer-paused')) {
+        throw new Error('progressContainer missing timer-running or incorrectly has timer-paused in running state');
+      }
+      vm.runInContext("timerStatus = 'paused';", context);
+      updatePlayPauseButtonUI();
+      if (pContainer.classList.contains('timer-running') || !pContainer.classList.contains('timer-paused')) {
+        throw new Error('progressContainer has timer-running or missing timer-paused in paused state');
+      }
+      vm.runInContext("timerStatus = 'idle';", context);
+      updatePlayPauseButtonUI();
+      if (pContainer.classList.contains('timer-running') || pContainer.classList.contains('timer-paused')) {
+        throw new Error('progressContainer retains running/paused classes in idle state');
+      }
+    }
+
+    // Verify SVG and CSS ring enhancements
+    if (!content.includes('id="timerProgressGradient"') ||
+        !content.includes('id="progressIndicatorDot"') ||
+        !content.includes('id="ringPreviewTooltip"') ||
+        !content.includes('id="progressPreviewDot"')) {
+      throw new Error('Ring enhancements (timerProgressGradient, progressIndicatorDot, ringPreviewTooltip, progressPreviewDot) missing in index.html!');
+    }
+    if (!content.includes('.ring-preview-tooltip') ||
+        !content.includes('.progress-indicator-dot') ||
+        !content.includes('@keyframes timerRingPulse') ||
+        !content.includes('.progress-container::after') ||
+        !content.includes('@keyframes surfacePlaneLightCast')) {
+      throw new Error('CSS rules for ring enhancements or surface plane light cast missing in index.html!');
+    }
+
+    // Verify ticks removed as requested
+    if (content.includes('class="progress-ticks"')) {
+      throw new Error('progress-ticks still exists in index.html!');
+    }
+
+    console.log('✅ Success: Time ring progress bar & visual enhancements test passed.');
 
     // Test sound effects toggle and persistence
     console.log('Running test for sound toggle and persistence...');
@@ -705,6 +792,7 @@ function runSanityCheck() {
       throw new Error('sw.js must handle navigate requests with network-first and offline fallback!');
     }
     console.log('✅ Success: Service Worker PWA caching verified.');
+    console.log('\nAll tests passed.');
   } catch (err) {
     console.error('❌ Sanity check failed!');
     console.error(err);
